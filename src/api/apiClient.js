@@ -2,9 +2,9 @@ import axios from 'axios';
 
 // Configure Axios with the base URL of our backend API
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5000/api/v1',
+  //baseURL: 'http://localhost:5000/api/v1',
 
-  // baseURL: 'https://amul-account-backend-production.up.railway.app/api/v1',
+  baseURL: 'https://amul-account-backend-production.up.railway.app/api/v1',
 
 
   headers: {
