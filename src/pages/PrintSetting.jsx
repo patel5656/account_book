@@ -4,6 +4,7 @@ import { cn } from '../utils';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import apiClient from '../api/apiClient';
+import { Template1 } from './PrintTemplates';
 export function PrintSetting() {
     const [pageSize, setPageSize] = useState('2inch');
     const [transactionType, setTransactionType] = useState('General Template');
@@ -1388,130 +1389,36 @@ export function PrintSetting() {
 
                         {/* Modal Body */}
                         <div className="flex-1 overflow-y-auto p-6 bg-[#ffffff] flex">
-
                             {/* Template Preview Box */}
-                            <div ref={invoiceRef} className="border-[1px] border-[#e5e7eb] rounded-[4px] w-full max-w-[750px] flex flex-col shrink-0">
-
-                                {/* Receipt Content */}
-                                <div className="p-8 flex-1 flex flex-col">
-                                    {/* Receipt Header */}
-                                    <div className="w-full flex justify-between items-start border-b border-gray-300 pb-4 mb-4">
-                                        <div>
-                                            <h3 className="text-[#4F46E5] font-bold text-[18px] mb-4">
-                                                {transactionType2.toUpperCase() === 'INCOME TRANSACTION' ? 'TAX INVOICE' : transactionType2.toUpperCase()}
-                                            </h3>
-                                            <h2 className="text-[#111827] font-bold text-[20px] mb-4">Swayam Bill Book</h2>
-                                            <p className="text-[13px] text-[#1f2937] font-bold leading-tight uppercase">OFFICE NO. 211, EMPIRE STATE BUILDING, RING ROAD, Surat,</p>
-                                            <p className="text-[13px] text-[#1f2937] font-bold leading-tight">Gujarat, India, 395002</p>
-                                            <p className="text-[13px] text-[#1f2937] font-bold leading-tight mt-2">Tel : 95874XXXXX | abc@gmail.com</p>
-                                            <p className="text-[13px] text-[#1f2937] font-bold leading-tight">GSTIN: 24AAOXXXXXXX</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Customer Details */}
-                                    <div className="w-full text-[13px] text-[#1f2937] font-bold leading-tight mb-4 border-b border-dashed border-[#9ca3af] pb-3">
-                                        <div className="flex justify-between mb-4">
-                                            <span>Invoice no: {previewInvoice?.invoiceNo || 'ABC1172023-24'}</span>
-                                            <span>Date: {previewInvoice?.date ? new Date(previewInvoice.date).toLocaleDateString('en-GB') : '24-01-2024'}</span>
-                                        </div>
-                                        <div>Customer: {previewInvoice?.customer?.name || 'NISHIT'}</div>
-                                        <div className="uppercase">Address: {previewInvoice?.customer?.address || 'OFFICE NO. 211, EMPIRE STATE BUILDING RING ROAD'}</div>
-                                        <div>GSTIN: {previewInvoice?.customer?.gstin || '18AABXXXXXXX'}</div>
-                                    </div>
-
-                                    {/* Main Table */}
-                                    <div className="w-full mb-4 border-b border-dashed border-[#9ca3af] pb-3">
-                                        <table className="w-full text-[13px] font-bold">
-                                            <thead>
-                                                <tr className="border-b border-dashed border-[#9ca3af]">
-                                                    <th className="py-2 text-left font-bold">Item Name</th>
-                                                    <th className="py-2 text-center font-bold ">Qty</th>
-                                                    <th className="py-2 text-right font-bold ">Rate</th>
-                                                    <th className="py-2 text-right font-bold ">Amount</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="align-top">
-                                                {parsedItems.map((item, idx) => (
-                                                    <tr key={idx}>
-                                                        <td className="py-2 leading-tight">
-                                                            {item.name}
-                                                            {item.desc && <><br /><span className="font-normal text-[10px]">{item.desc}</span></>}
-                                                        </td>
-                                                        <td className="py-2 text-center">{item.qty}</td>
-                                                        <td className="py-2 text-right">{item.rate}</td>
-                                                        <td className="py-2 text-right">{item.taxableValue}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Totals Section */}
-                                    <div className="w-full text-[13px] font-bold mb-4">
-                                        <div className="flex justify-between border-b border-dashed border-[#9ca3af] pb-3 mb-4">
-                                            <span>Total</span>
-                                            <span>{totalQty.toFixed(2)}</span>
-                                            <span>{totalTaxable.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between"><span>CGST:</span><span>{previewInvoice?.totalCgst ? Number(previewInvoice.totalCgst).toFixed(2) : '0.00'}</span></div>
-                                        <div className="flex justify-between"><span>SGST:</span><span>{previewInvoice?.totalSgst ? Number(previewInvoice.totalSgst).toFixed(2) : '0.00'}</span></div>
-                                        <div className="flex justify-between"><span>IGST:</span><span>{previewInvoice?.totalIgst ? Number(previewInvoice.totalIgst).toFixed(2) : '0.00'}</span></div>
-                                        <div className="flex justify-between"><span>TCS:</span><span>{previewInvoice?.tcsAmount ? Number(previewInvoice.tcsAmount).toFixed(2) : '0.00'}</span></div>
-                                        <div className="flex justify-between"><span>Cess:</span><span>{previewInvoice?.totalCess ? Number(previewInvoice.totalCess).toFixed(2) : '0.00'}</span></div>
-                                        <div className="flex justify-between"><span>Round off:</span><span>{previewInvoice?.roundOff ? Number(previewInvoice.roundOff).toFixed(2) : '0.00'}</span></div>
-
-                                        <div className="flex justify-between text-[15px] mt-2">
-                                            <span>Total Payable Amount:</span>
-                                            <span>{previewInvoice?.totalAmount ? Number(previewInvoice.totalAmount).toFixed(2) : totalFinal.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* HSN Table */}
-                                    <div className="w-full mb-4 border-t border-b border-dashed border-[#9ca3af] py-2">
-                                        <table className="w-full text-[18px] font-bold">
-                                            <thead>
-                                                <tr>
-                                                    <th className="py-2.5 text-left font-bold">HSN/ SAC</th>
-                                                    <th className="py-2.5 text-right font-bold ">Taxable<br />Amount</th>
-                                                    <th className="py-2.5 text-right font-bold ">GST<br />(%)</th>
-                                                    <th className="py-2.5 text-right font-bold ">CGST</th>
-                                                    <th className="py-2.5 text-right font-bold ">SGST</th>
-                                                    <th className="py-2.5 text-right font-bold ">Total Tax</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td className="py-2.5">-</td>
-                                                    <td className="py-2.5 text-right">{totalTaxable.toFixed(2)}</td>
-                                                    <td className="py-2.5 text-right">0</td>
-                                                    <td className="py-2.5 text-right">0.00</td>
-                                                    <td className="py-2.5 text-right">0.00</td>
-                                                    <td className="py-2.5 text-right">0.00</td>
-                                                </tr>
-                                                <tr className="border-t border-dashed border-[#9ca3af]">
-                                                    <td className="py-2.5">Total</td>
-                                                    <td className="py-2.5 text-right">{totalTaxable.toFixed(2)}</td>
-                                                    <td className="py-2.5 text-right"></td>
-                                                    <td className="py-2.5 text-right">{previewInvoice?.totalCgst ? Number(previewInvoice.totalCgst).toFixed(2) : '0.00'}</td>
-                                                    <td className="py-2.5 text-right">{previewInvoice?.totalSgst ? Number(previewInvoice.totalSgst).toFixed(2) : '0.00'}</td>
-                                                    <td className="py-2.5 text-right">{previewInvoice?.totalGstAmount ? Number(previewInvoice.totalGstAmount).toFixed(2) : '0.00'}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Terms */}
-                                    <div className="w-full text-[18px] font-bold leading-tight">
-                                        <div>Terms and conditions:</div>
-                                        <div>Character Count Online is a free online character and word counting tool.</div>
-                                    </div>
+                            <div className="flex flex-col items-center shrink-0">
+                                <div ref={invoiceRef} className="border-[1px] border-[#e5e7eb] rounded-[4px] w-full max-w-[750px] bg-white p-4 overflow-auto">
+                                    <Template1 
+                                        previewInvoice={previewInvoice}
+                                        parsedItems={previewInvoice?.items?.map(i => ({
+                                            name: i.product?.name || i.name || 'Unknown',
+                                            quantity: i.quantity || 1,
+                                            price: i.price || 0,
+                                            discount: i.discount1 || 0,
+                                            hsn: i.hsnCode || '-',
+                                            total: i.amount || 0
+                                        })) || []}
+                                        totalQty={totalQty}
+                                        totalTaxable={totalTaxable.toFixed(2)}
+                                        totalFinal={totalFinal.toFixed(2)}
+                                        qrCodeUrl={qrCodeUrl}
+                                        allPrintSettings={allPrintSettings}
+                                        headerSettings={headerSettings}
+                                        tableSettings={tableSettings}
+                                        footerSettings={footerSettings}
+                                        customization={customization}
+                                        transactionType={transactionType}
+                                        transactionType2={transactionType2}
+                                    />
                                 </div>
-
-                                {/* Selected Footer */}
-                                <div className="w-full bg-[#4F46E5] text-[#ffffff] text-center py-2 font-bold text-[13px] tracking-widest mt-auto">
+                                {/* Selected Footer - Placed outside invoiceRef */}
+                                <div className="w-full max-w-[750px] bg-[#4F46E5] text-[#ffffff] text-center py-2 font-bold text-[13px] tracking-widest mt-4 rounded-[4px]">
                                     ** SELECTED **
                                 </div>
-
                             </div>
 
                             {/* Optional Right Area for other templates if needed */}
