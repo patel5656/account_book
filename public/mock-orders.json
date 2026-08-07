@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "description": "Glass 4MM",
+    "quantity": 12,
+    "price": 150,
+    "amount": 1800
+  },
+  {
+    "id": 2,
+    "description": "Saree",
+    "quantity": 1,
+    "price": 2000,
+    "amount": 2000
+  },
+  {
+    "id": 3,
+    "description": "Cricket Bat",
+    "quantity": 3,
+    "price": 100,
+    "amount": 300
+  },
+  {
+    "id": 4,
+    "description": "Item A",
+    "quantity": 5,
+    "price": 75,
+    "amount": 375
+  },
+  {
+    "id": 5,
+    "description": "Item B",
+    "quantity": 8,
+    "price": 50,
+    "amount": 400
+  }
+]

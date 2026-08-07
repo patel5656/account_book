@@ -1,0 +1,49 @@
+# Superadmin SaaS Dashboard - Implementation Plan
+
+This document serves as the architectural blueprint for introducing a SaaS-like Multi-Company (Multi-Tenant) Superadmin module into the Os Books Accounting software. This is a reference guide for future development.
+
+## 1. Architectural Strategy
+We will separate the Superadmin logic entirely from the existing Tenant (Company) logic by utilizing distinct routing layouts. This ensures the current single-company workflow remains undisturbed and secure.
+
+## 2. Routing & Core Setup
+- **App.jsx Changes:** Introduce a new top-level route grouping for `/superadmin/*`.
+- **Role-Based Guard:** Protect the `/superadmin/*` routes with a `SuperadminRouteGuard` that checks `user.role === 'SUPERADMIN'`.
+- **Fallback Guard:** Ensure the existing `/*` fallback route continues to serve the `DashboardLayout` for regular company owners.
+
+## 3. Superadmin Layouts & UI Components
+- **SuperadminLayout (`src/layouts/SuperadminLayout.jsx`):** A distinct layout wrapper independent from `DashboardLayout.jsx`.
+- **SuperadminSidebar:** Contains menus exclusively for Superadmin operations (Companies, Subscriptions, Users, Settings).
+- **SuperadminNavbar:** Stripped of company-specific tools (like 'Print Settings') and focused on global system metrics.
+
+## 4. Superadmin Pages (New Screens)
+
+### 4.1. Dashboard Overview (`/superadmin/dashboard`)
+- High-level KPI metrics: Total Active Companies, Monthly Recurring Revenue (MRR), Storage Usage, and Pending Support Tickets.
+
+### 4.2. Company Management (`/superadmin/companies`)
+- Data grid listing all registered client companies.
+- Actions: Add New Tenant, Block/Suspend Account, and **Impersonate (Login-as)** to seamlessly jump into a client's dashboard for troubleshooting.
+
+### 4.3. Subscription & Billing (`/superadmin/subscriptions`)
+- Management of SaaS plans (e.g., Basic, Pro, Enterprise).
+- Track company plan expiries and view payment histories.
+
+### 4.4. Support Tickets (`/superadmin/support`)
+- A centralized inbox to reply to error reports or feature queries sent by the tenant companies.
+
+### 4.5. Global Settings (`/superadmin/settings`)
+- Master configurations, global announcements broadcast tool, and payment gateway setups (Razorpay/Stripe API keys) for the main software owner.
+
+## 5. Updates to Current Admin Dashboard (Tenant UI)
+*To support multi-tenant features from the client's perspective, minor UI additions are needed in the existing admin dashboard:*
+
+- **Company Switcher:** Add a dropdown in `TopNavbar.jsx`. If a user owns multiple companies, they can switch their active session context.
+- **Announcement Banner:** A space below the navbar to display global alerts pushed by the Superadmin (e.g., "Server Maintenance tonight").
+- **My Subscription Page (`/admin/billing`):** A new page for the company owner to view their current active plan, expiry date, and pay for renewals.
+- **Support Helpdesk (`/admin/support`):** A form allowing the company to raise support tickets directly to the Superadmin.
+
+## 6. Database / Backend Considerations
+- **Tenant Isolation:** Every table (e.g., `invoices`, `items`, `customers`) must include a `company_id` column.
+- **Auth Tokens:** The JWT payload must securely store both the user's `role` and the active `company_id`.
+
+*(Note: No existing code has been altered. This plan is ready for execution when the SaaS feature is formally requested.)*

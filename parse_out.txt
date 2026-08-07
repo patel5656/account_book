@@ -1,0 +1,109 @@
+242: [0->-1] </div>
+245: [-1->0] <div className="flex-1 bg-[#fbfbfe] overflow-y-auto p-8 flex justify-center border-l-4 border-purple-800/10">
+248: [0->1] <div
+258: [1->2] <div className="text-center w-full mb-3">
+260: [2->3] <div className="flex justify-center mb-2">
+261: [3->3] <div className="w-14 h-14 bg-gray-200 border border-gray-300 flex items-center justify-center text-[10px] text-gray-500 rounded-full">Logo</div>
+262: [3->2] </div>
+289: [2->1] </div>
+292: [1->2] <div className="w-full text-[#1f2937] leading-[1.4] mb-3" style={{ fontSize: `${customization.headerContentsFontSize}px` }}>
+293: [2->3] <div className="flex justify-between">
+296: [3->2] </div>
+297: [2->2] <div className="font-bold" style={{ fontSize: `${customization.headerLabelsFontSize}px` }}>{headerSettings.labelCustomer || 'Customer'}: <span className="font-normal" style={{ fontSize: `${customization.headerContentsFontSize}px` }}>NISHIT</span></div>
+298: [2->2] <div className="font-bold" style={{ fontSize: `${customization.headerLabelsFontSize}px` }}>{headerSettings.labelAddress || 'Address'}: <span className="font-normal" style={{ fontSize: `${customization.headerContentsFontSize}px` }}>A-406, 4TH FLOOR, MONARCH GAURAVPATH ROAD, PAL,</span></div>
+299: [2->2] <div>BAMBOO FLAT, ANDAMAN AND NICOBAR ISLANDS, INDIA</div>
+302: [2->2] <div className="font-bold" style={{ fontSize: `${customization.headerLabelsFontSize}px` }}>{headerSettings.labelPartyGstin || 'GSTIN'}: <span className="font-normal" style={{ fontSize: `${customization.headerContentsFontSize}px` }}>24AADCD6XXXXXXX</span></div>
+305: [2->2] <div className="font-bold" style={{ fontSize: `${customization.headerLabelsFontSize}px` }}>{headerSettings.labelPartyContact || 'Contact No'}: <span className="font-normal" style={{ fontSize: `${customization.headerContentsFontSize}px` }}>9XXXXXX321</span></div>
+308: [2->2] <div className="font-bold" style={{ fontSize: `${customization.headerLabelsFontSize}px` }}>{headerSettings.labelPartyPan || 'PAN'}: <span className="font-normal" style={{ fontSize: `${customization.headerContentsFontSize}px` }}>EDBARXXXXX</span></div>
+310: [2->1] </div>
+312: [1->1] {/* Table */}
+313: [1->2] <div className="w-full mb-1">
+315: [2->3] <div className="flex w-full py-1 font-bold" style={{ fontSize: `${customization.tableHeadingsFontSize}px` }}>
+316: [3->3] <div className="flex-1 text-left pr-2">{tableSettings.thItemName || 'Item Name'}</div>
+317: [3->3] {tableSettings.showThQty && <div className="w-[35px] text-right">{tableSettings.thQty || 'Qty'}</div>}
+318: [3->3] {tableSettings.showThRate && <div className="w-[45px] text-right">{tableSettings.thRate || 'Rate'}</div>}
+319: [3->3] {tableSettings.showThDiscount && <div className="w-[30px] text-right">{tableSettings.thDiscount || 'Dis.'}</div>}
+320: [3->3] {tableSettings.showThTaxableValue && <div className="w-[55px] text-right">{tableSettings.thTaxableValue || 'Taxable Value'}</div>}
+321: [3->3] {tableSettings.showThTotalAmount && <div className="w-[60px] text-right">{tableSettings.thTotalAmount || 'Total Amount'}</div>}
+322: [3->2] </div>
+325: [2->3] <div className="flex flex-col w-full align-top" style={{ fontSize: `${customization.tableContentsFontSize}px` }}>
+326: [3->4] <div className="flex w-full py-1">
+327: [4->4] <div className="flex-1 pr-2">Adrian Bell</div>
+328: [4->4] {tableSettings.showThQty && <div className="w-[35px] text-right">1</div>}
+329: [4->4] {tableSettings.showThRate && <div className="w-[45px] text-right">1000.00</div>}
+330: [4->4] {tableSettings.showThDiscount && <div className="w-[30px] text-right">120</div>}
+331: [4->4] {tableSettings.showThTaxableValue && <div className="w-[55px] text-right">880.00</div>}
+332: [4->4] {tableSettings.showThTotalAmount && <div className="w-[60px] text-right">1,006.40</div>}
+333: [4->3] </div>
+335: [3->4] <div className="flex w-full py-0.5">
+336: [4->4] <div className="flex-1 pr-2">Saree</div>
+337: [4->4] {tableSettings.showThQty && <div className="w-[35px] text-right">1</div>}
+338: [4->4] {tableSettings.showThRate && <div className="w-[45px] text-right">1500.00</div>}
+339: [4->4] {tableSettings.showThDiscount && <div className="w-[30px] text-right">20</div>}
+340: [4->4] {tableSettings.showThTaxableValue && <div className="w-[55px] text-right">1,200.00</div>}
+341: [4->4] {tableSettings.showThTotalAmount && <div className="w-[60px] text-right">1,416.00</div>}
+342: [4->3] </div>
+344: [3->3] <div className="w-full pb-1" style={{ fontSize: `${customization.tableDescriptionFontSize}px` }}>Blue Saree {tableSettings.showThHsnSac && '( HSN/SAC: 1006, GST: 28% )'}</div>
+346: [3->4] <div className="flex w-full py-0.5">
+347: [4->4] <div className="flex-1 pr-2"></div>
+348: [4->4] {tableSettings.showThQty && <div className="w-[35px] text-right">5</div>}
+349: [4->4] {tableSettings.showThRate && <div className="w-[45px] text-right">781.00</div>}
+350: [4->4] {tableSettings.showThDiscount && <div className="w-[30px] text-right">0.00</div>}
+351: [4->4] {tableSettings.showThTaxableValue && <div className="w-[55px] text-right">3,905.00</div>}
+352: [4->4] {tableSettings.showThTotalAmount && <div className="w-[60px] text-right">4,999.68</div>}
+353: [4->3] </div>
+355: [3->4] <div className="flex w-full py-1 pb-2">
+356: [4->5] <div className="flex-1 leading-tight pr-2">
+359: [5->4] </div>
+360: [4->4] {tableSettings.showThQty && <div className="w-[35px] text-right">3</div>}
+361: [4->4] {tableSettings.showThRate && <div className="w-[45px] text-right">100.00</div>}
+362: [4->4] {tableSettings.showThDiscount && <div className="w-[30px] text-right">0.00</div>}
+363: [4->4] {tableSettings.showThTaxableValue && <div className="w-[55px] text-right">300.00</div>}
+364: [4->4] {tableSettings.showThTotalAmount && <div className="w-[60px] text-right">384.00</div>}
+365: [4->3] </div>
+366: [3->2] </div>
+368: [2->2] {/* Totals border */}
+370: [2->3] <div className="flex w-full py-1 font-bold" style={{ fontSize: `${customization.tableTotalFontSize}px` }}>
+371: [3->3] <div className="flex-1 pr-2">Total</div>
+372: [3->3] <div className="w-[35px] text-right">10.00</div>
+373: [3->3] <div className="w-[45px] text-right"></div>
+374: [3->3] <div className="w-[30px] text-right"></div>
+375: [3->3] <div className="w-[55px] text-right">6,285.00</div>
+376: [3->3] <div className="w-[60px] text-right">7,806.08</div>
+377: [3->2] </div>
+379: [2->1] </div>
+381: [1->1] {/* Totals */}
+382: [1->2] <div className="w-full text-[11px] mb-3">
+383: [2->3] <div className="flex justify-between w-full font-bold">
+387: [3->2] </div>
+389: [2->2] {tableSettings.showTlCgst && <div className="flex justify-between w-full"><span>{tableSettings.tlCgst || 'CGST'}:</span><span></span></div>}
+390: [2->2] {tableSettings.showTlSgst && <div className="flex justify-between w-full"><span>{tableSettings.tlSgst || 'SGST'}:</span><span></span></div>}
+391: [2->2] {tableSettings.showTlIgst && <div className="flex justify-between w-full"><span>{tableSettings.tlIgst || 'IGST'}:</span><span></span></div>}
+392: [2->2] {tableSettings.showTlTcs && <div className="flex justify-between w-full"><span>{tableSettings.tlTcs || 'TCS'}:</span><span></span></div>}
+393: [2->2] {tableSettings.showTlCess && <div className="flex justify-between w-full"><span>{tableSettings.tlCess || 'Cess'}:</span><span></span></div>}
+394: [2->2] {tableSettings.showTlRoundOff && <div className="flex justify-between w-full"><span>{tableSettings.tlRoundOff || 'Round off'}:</span><span></span></div>}
+396: [2->2] <div className="mt-1 w-full"><PrintDashedLine /></div>
+397: [2->3] <div className="flex justify-between w-full font-bold text-[13px] my-1">
+400: [3->2] </div>
+401: [2->2] <div className="mb-1 w-full"><PrintDashedLine /></div>
+403: [2->2] <div className="flex justify-between w-full mt-1"><span>Balance:</span><span></span></div>
+404: [2->2] <div className="flex justify-between w-full"><span>Previous O/S:</span><span></span></div>
+405: [2->2] <div className="flex justify-between w-full"><span>Current O/S:</span><span></span></div>
+406: [2->1] </div>
+409: [1->1] {/* Footer Text */}
+410: [1->2] <div className="w-full text-[#1f2937] leading-tight mb-4" style={{ fontSize: `${customization.footerContentsFontSize}px` }}>
+411: [2->3] <div className="font-bold mb-3" style={{ fontSize: `${customization.footerHeadingsFontSize}px` }}>
+413: [3->2] </div>
+414: [2->2] <div className="font-bold mb-1" style={{ fontSize: `${customization.footerTermsFontSize}px` }}>Terms and conditions:</div>
+415: [2->2] <div className="mb-1" style={{ fontSize: `${customization.footerTermsFontSize}px` }}>Payment Terms:</div>
+416: [2->2] <div style={{ fontSize: `${customization.footerTermsFontSize}px` }}>Clearly state the payment due date, which is the date by which the client must pay the invoice amount. Specify the accepted payment methods (e.g., credit card bank transfer, PayPal) and any associated fees for certain payment methods.</div>
+417: [2->1] </div>
+420: [1->2] <div className="w-full flex flex-col items-center gap-4 mt-auto">
+421: [2->3] <div className="w-16 h-16 opacity-80">
+431: [3->2] </div>
+432: [2->3] <div className="text-[#1f2937] text-center" style={{ fontSize: `${customization.footerNoteFontSize}px` }}>
+434: [3->2] </div>
+435: [2->1] </div>
+437: [1->0] </div>
+438: [0->-1] </div>
+439: [-1->-2] </div>
