@@ -18,7 +18,7 @@ export const Template1 = ({
   const primaryColor = customization?.primaryColor || '#4d1685';
 
   return (
-    <div className="w-full flex flex-col font-sans text-[10px] bg-white border border-gray-400 p-0 box-border h-full max-w-[210mm]">
+    <div className="w-full flex flex-col font-sans text-[10px] bg-white border border-gray-400 p-0 box-border min-h-full max-w-[210mm]">
       
       {/* 1. Header Section */}
       <div className="w-full flex flex-col border-b border-gray-400 relative">
