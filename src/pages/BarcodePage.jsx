@@ -12,7 +12,7 @@ import { ItemMasterModal } from '../components/ItemMasterModal';
 // Custom YouTube SVG Icon
 const YoutubeIcon = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
   </svg>
 );
 
@@ -125,7 +125,7 @@ export function BarcodePage() {
   const handleAddToList = () => {
     if (!selectedProduct) return alert('Please select a product');
     if (!printQty || parseInt(printQty) <= 0) return alert('Please enter a valid quantity');
-
+    
     const prod = products.find(p => p.id.toString() === String(selectedProduct));
     const newItem = {
       id: Date.now(),
@@ -137,7 +137,7 @@ export function BarcodePage() {
       mrp: mrpInput
     };
     setPrintList([...printList, newItem]);
-
+    
     // Reset selection if needed, or keep it
     setPrintQty('0');
   };
@@ -224,7 +224,7 @@ export function BarcodePage() {
   const handleMouseDown = (e, id) => {
     e.preventDefault();
     setSelectedId(id);
-
+    
     const element = elements.find(el => el.id === id);
     if (!element) return;
 
@@ -236,7 +236,7 @@ export function BarcodePage() {
     const handleMouseMove = (moveEvent) => {
       const deltaX = moveEvent.clientX - startX;
       const deltaY = moveEvent.clientY - startY;
-
+      
       let newX = startElX + deltaX;
       let newY = startElY + deltaY;
 
@@ -271,7 +271,7 @@ export function BarcodePage() {
         {/* Top Teal Bar for Designer */}
         <div className="bg-[#4F46E5] px-4 py-[6px] flex justify-between items-center text-white h-[45px]">
           <h2 className="text-[14.5px] font-medium tracking-wide">Barcode Template Designer</h2>
-          <button
+          <button 
             onClick={() => {
               setShowDesigner(false);
               setSelectedId(null);
@@ -287,15 +287,15 @@ export function BarcodePage() {
         {/* Toolbar */}
         <div className="bg-white border-b border-gray-200 py-2.5 px-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
           <div className="flex flex-wrap items-center gap-4">
-            <input
-              type="text"
+            <input 
+              type="text" 
               placeholder="Template Name"
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
               className="h-[32px] border border-gray-300 rounded-[3px] px-2.5 text-[13px] outline-none placeholder-gray-400 text-gray-700 bg-white focus:border-[#4F46E5] w-[200px]"
             />
-
-            <button
+            
+            <button 
               onClick={() => setShowPageSetup(!showPageSetup)}
               className={cn(
                 "px-3 h-[32px] rounded-[3px] flex items-center gap-1.5 text-[13px] font-bold transition-colors focus:outline-none text-white",
@@ -306,21 +306,21 @@ export function BarcodePage() {
             </button>
 
             <label className="flex items-center gap-1.5 cursor-pointer select-none text-[13.5px] font-bold text-gray-800">
-              <input
-                type="checkbox"
+              <input 
+                type="checkbox" 
                 checked={showGrid}
                 onChange={(e) => setShowGrid(e.target.checked)}
-                className="w-4 h-4 accent-[#0d6efd]"
+                className="w-4 h-4 accent-[#0d6efd]" 
               />
               <span>Show Grid</span>
             </label>
 
             <div className="flex items-center gap-2">
               <span className="text-[13.5px] font-bold text-gray-800">Zoom:</span>
-              <input
-                type="range"
-                min="100"
-                max="300"
+              <input 
+                type="range" 
+                min="100" 
+                max="300" 
                 step="50"
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
@@ -330,18 +330,18 @@ export function BarcodePage() {
             </div>
 
             <label className="flex items-center gap-1.5 cursor-pointer select-none text-[13.5px] font-bold text-gray-800">
-              <input
-                type="checkbox"
+              <input 
+                type="checkbox" 
                 checked={snapToGrid}
                 onChange={(e) => setSnapToGrid(e.target.checked)}
-                className="w-4 h-4 accent-[#0d6efd]"
+                className="w-4 h-4 accent-[#0d6efd]" 
               />
               <span>Snap to Grid</span>
             </label>
 
             <div className="flex items-center gap-1.5">
               <span className="text-[13.5px] font-bold text-gray-800">Grid Size:</span>
-              <select
+              <select 
                 value={gridSize}
                 onChange={(e) => setGridSize(e.target.value)}
                 className="h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 bg-white focus:border-[#4F46E5]"
@@ -357,7 +357,7 @@ export function BarcodePage() {
             </div>
           </div>
 
-          <button
+          <button 
             onClick={async () => {
               try {
                 const payload = {
@@ -372,14 +372,14 @@ export function BarcodePage() {
                   pageBreak,
                   elements: elements
                 };
-
+                
                 let res;
                 if (activeTemplate && activeTemplate.name === templateName) {
                   res = await apiClient.put(`/barcode-settings/${activeTemplate.id}`, payload);
                 } else {
                   res = await apiClient.post('/barcode-settings', payload);
                 }
-
+                
                 if (res.data?.success) {
                   alert('Template saved successfully!');
                   fetchInitialData();
@@ -414,8 +414,8 @@ export function BarcodePage() {
                       onClick={() => handlePresetClick(preset)}
                       className={cn(
                         "px-3.5 py-1 text-[13px] font-medium border rounded-[3px] transition-all focus:outline-none",
-                        isActive
-                          ? "border-[#0d6efd] text-[#0d6efd] bg-[#0d6efd]/5 font-bold"
+                        isActive 
+                          ? "border-[#0d6efd] text-[#0d6efd] bg-[#0d6efd]/5 font-bold" 
                           : "border-[#0d6efd]/40 text-[#0d6efd] bg-white hover:bg-[#0d6efd]/5"
                       )}
                     >
@@ -430,8 +430,8 @@ export function BarcodePage() {
             <div className="grid grid-cols-4 gap-4">
               <div className="flex flex-col gap-1">
                 <label className="text-[13.5px] font-bold text-gray-800">Page Width</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={pageWidth}
                   onChange={(e) => {
                     setPageWidth(e.target.value);
@@ -442,8 +442,8 @@ export function BarcodePage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[13.5px] font-bold text-gray-800">Page Height</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={pageHeight}
                   onChange={(e) => {
                     setPageHeight(e.target.value);
@@ -454,8 +454,8 @@ export function BarcodePage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[13.5px] font-bold text-gray-800">Left Margin</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={leftMargin}
                   onChange={(e) => {
                     setLeftMargin(e.target.value);
@@ -466,8 +466,8 @@ export function BarcodePage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[13.5px] font-bold text-gray-800">Right Margin</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={rightMargin}
                   onChange={(e) => {
                     setRightMargin(e.target.value);
@@ -479,8 +479,8 @@ export function BarcodePage() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-[13.5px] font-bold text-gray-800">Label Gap</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={labelGap}
                   onChange={(e) => {
                     setLabelGap(e.target.value);
@@ -491,8 +491,8 @@ export function BarcodePage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[13.5px] font-bold text-gray-800">Height Gap</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={heightGap}
                   onChange={(e) => {
                     setHeightGap(e.target.value);
@@ -503,8 +503,8 @@ export function BarcodePage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[13.5px] font-bold text-gray-800">Label Count (per row)</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   value={labelCount}
                   onChange={(e) => {
                     setLabelCount(e.target.value);
@@ -515,7 +515,7 @@ export function BarcodePage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[13.5px] font-bold text-gray-800">Page Break</label>
-                <select
+                <select 
                   value={pageBreak}
                   onChange={(e) => setPageBreak(e.target.value)}
                   className="h-[34px] border border-gray-300 rounded-[3px] px-2.5 text-[13px] outline-none text-gray-700 bg-white focus:border-[#4F46E5]"
@@ -540,14 +540,14 @@ export function BarcodePage() {
           <div className="w-[200px] border-r border-gray-200 p-4 bg-white flex flex-col overflow-y-auto">
             <h3 className="text-[14.5px] font-bold text-gray-800 mb-3 select-none">Elements</h3>
             <div className="flex flex-col border border-gray-200 rounded-[4px] overflow-hidden">
-              <button
+              <button 
                 onClick={() => addElement('text')}
                 className="w-full flex items-center gap-3 px-4 h-[42px] bg-white hover:bg-[#f8f9fa] border-b border-gray-150 last:border-b-0 text-gray-700 transition-colors text-[13px] font-semibold focus:outline-none"
               >
                 <span className="font-serif font-bold text-[15px] text-gray-600 w-4 h-4 flex items-center justify-center">A</span>
                 <span>Text</span>
               </button>
-              <button
+              <button 
                 onClick={() => addElement('barcode')}
                 className="w-full flex items-center gap-3 px-4 h-[42px] bg-white hover:bg-[#f8f9fa] border-b border-gray-150 last:border-b-0 text-gray-700 transition-colors text-[13px] font-semibold focus:outline-none"
               >
@@ -561,21 +561,21 @@ export function BarcodePage() {
                 </svg>
                 <span>Barcode</span>
               </button>
-              <button
+              <button 
                 onClick={() => addElement('qrcode')}
                 className="w-full flex items-center gap-3 px-4 h-[42px] bg-white hover:bg-[#f8f9fa] border-b border-gray-150 last:border-b-0 text-gray-700 transition-colors text-[13px] font-semibold focus:outline-none"
               >
                 <QrCode className="w-4 h-4 text-gray-500" />
                 <span>QR Code</span>
               </button>
-              <button
+              <button 
                 onClick={() => addElement('image')}
                 className="w-full flex items-center gap-3 px-4 h-[42px] bg-white hover:bg-[#f8f9fa] border-b border-gray-150 last:border-b-0 text-gray-700 transition-colors text-[13px] font-semibold focus:outline-none"
               >
                 <ImageIcon className="w-4 h-4 text-gray-500" />
                 <span>Image</span>
               </button>
-              <button
+              <button 
                 onClick={() => addElement('rectangle')}
                 className="w-full flex items-center gap-3 px-4 h-[42px] bg-white hover:bg-[#f8f9fa] border-b border-gray-150 last:border-b-0 text-gray-700 transition-colors text-[13px] font-semibold focus:outline-none"
               >
@@ -584,14 +584,14 @@ export function BarcodePage() {
                 </svg>
                 <span>Rectangle</span>
               </button>
-              <button
+              <button 
                 onClick={() => addElement('circle')}
                 className="w-full flex items-center gap-3 px-4 h-[42px] bg-white hover:bg-[#f8f9fa] border-b border-gray-150 last:border-b-0 text-gray-700 transition-colors text-[13px] font-semibold focus:outline-none"
               >
                 <Circle className="w-4 h-4 text-gray-500" />
                 <span>Circle</span>
               </button>
-              <button
+              <button 
                 onClick={() => addElement('line')}
                 className="w-full flex items-center gap-3 px-4 h-[42px] bg-white hover:bg-[#f8f9fa] border-b border-gray-150 last:border-b-0 text-gray-700 transition-colors text-[13px] font-semibold focus:outline-none"
               >
@@ -604,11 +604,11 @@ export function BarcodePage() {
           </div>
 
           {/* Middle Design Canvas */}
-          <div
+          <div 
             onClick={() => setSelectedId(null)}
             className="flex-1 bg-[#f1f3f5] flex items-center justify-center p-8 overflow-auto relative"
           >
-            <div
+            <div 
               className="bg-white border-[3px] border-black shadow-lg relative overflow-hidden transition-transform duration-150 ease-out origin-center"
               onClick={(e) => e.stopPropagation()}
               style={{
@@ -650,17 +650,17 @@ export function BarcodePage() {
 
                   {/* Render based on element type */}
                   {el.type === 'text' && (
-                    <span
-                      style={{ fontSize: `${el.fontSize}px` }}
+                    <span 
+                      style={{ fontSize: `${el.fontSize}px` }} 
                       className="font-bold text-black whitespace-nowrap block select-none pointer-events-none"
                     >
-                      {el.field && el.field !== 'Static Text' ? '' : el.text}
+                      {el.text}
                     </span>
                   )}
 
                   {el.type === 'barcode' && (
                     <div className="w-full h-full bg-white flex items-center justify-center pointer-events-none select-none overflow-hidden [&>svg]:w-full [&>svg]:h-full">
-                      <Barcode value={el.text || '12345678'} width={el.width / 100} height={el.height - 15} fontSize={10} margin={0} displayValue={true} />
+                      <Barcode value={el.text || '12345678'} width={el.width/100} height={el.height - 15} fontSize={10} margin={0} displayValue={true} />
                     </div>
                   )}
 
@@ -706,9 +706,9 @@ export function BarcodePage() {
                 <div className="flex gap-2">
                   <div className="flex-1 flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-gray-500">Position X (px)</label>
-                    <input
-                      type="number"
-                      value={selectedEl.x}
+                    <input 
+                      type="number" 
+                      value={selectedEl.x} 
                       onChange={(e) => {
                         const val = Math.max(0, Math.min(canvasWidth - selectedEl.width, Number(e.target.value)));
                         setElements(prev => prev.map(el => el.id === selectedId ? { ...el, x: val } : el));
@@ -718,9 +718,9 @@ export function BarcodePage() {
                   </div>
                   <div className="flex-1 flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-gray-500">Position Y (px)</label>
-                    <input
-                      type="number"
-                      value={selectedEl.y}
+                    <input 
+                      type="number" 
+                      value={selectedEl.y} 
                       onChange={(e) => {
                         const val = Math.max(0, Math.min(canvasHeight - selectedEl.height, Number(e.target.value)));
                         setElements(prev => prev.map(el => el.id === selectedId ? { ...el, y: val } : el));
@@ -735,9 +735,9 @@ export function BarcodePage() {
                   <div className="flex gap-2">
                     <div className="flex-1 flex flex-col gap-1">
                       <label className="text-[11px] font-bold text-gray-500">Width (px)</label>
-                      <input
-                        type="number"
-                        value={selectedEl.width}
+                      <input 
+                        type="number" 
+                        value={selectedEl.width} 
                         onChange={(e) => {
                           const val = Math.max(10, Math.min(canvasWidth - selectedEl.x, Number(e.target.value)));
                           setElements(prev => prev.map(el => el.id === selectedId ? { ...el, width: val } : el));
@@ -747,9 +747,9 @@ export function BarcodePage() {
                     </div>
                     <div className="flex-1 flex flex-col gap-1">
                       <label className="text-[11px] font-bold text-gray-500">Height (px)</label>
-                      <input
-                        type="number"
-                        value={selectedEl.height}
+                      <input 
+                        type="number" 
+                        value={selectedEl.height} 
                         onChange={(e) => {
                           const val = Math.max(10, Math.min(canvasHeight - selectedEl.y, Number(e.target.value)));
                           setElements(prev => prev.map(el => el.id === selectedId ? { ...el, height: val } : el));
@@ -764,9 +764,9 @@ export function BarcodePage() {
                 {['text', 'barcode', 'qrcode', 'image'].includes(selectedEl.type) && (
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-gray-500">Content Value</label>
-                    <input
-                      type="text"
-                      value={selectedEl.text}
+                    <input 
+                      type="text" 
+                      value={selectedEl.text} 
                       onChange={(e) => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, text: e.target.value } : el))}
                       className="h-[28px] border border-gray-300 rounded-[3px] px-2 text-[12px] outline-none text-gray-700 bg-white"
                     />
@@ -777,16 +777,16 @@ export function BarcodePage() {
                 {selectedEl.type === 'text' && (
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-gray-500">Data Binding</label>
-                    <select
+                    <select 
                       value={selectedEl.field || 'Static Text'}
                       onChange={(e) => {
-                        const field = e.target.value;
-                        let defaultText = selectedEl.text;
-                        if (field === 'Product Name') defaultText = '';
-                        if (field === 'MRP') defaultText = '';
-                        if (field === 'Sale Price') defaultText = '';
-                        if (field === 'Company Name') defaultText = '';
-                        setElements(prev => prev.map(el => el.id === selectedId ? { ...el, field, text: field === 'Static Text' ? el.text : defaultText } : el));
+                         const field = e.target.value;
+                         let defaultText = selectedEl.text;
+                         if (field === 'Product Name') defaultText = 'Product Name';
+                         if (field === 'MRP') defaultText = 'Γé╣0';
+                         if (field === 'Sale Price') defaultText = 'Γé╣0';
+                         if (field === 'Company Name') defaultText = 'SWAYAM BILL';
+                         setElements(prev => prev.map(el => el.id === selectedId ? { ...el, field, text: field === 'Static Text' ? el.text : defaultText } : el));
                       }}
                       className="h-[28px] border border-gray-300 rounded-[3px] px-2 text-[12px] outline-none text-gray-700 bg-white mb-2"
                     >
@@ -803,16 +803,16 @@ export function BarcodePage() {
                 {selectedEl.type === 'text' && (
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-gray-500">Font Size (px)</label>
-                    <input
-                      type="number"
-                      value={selectedEl.fontSize}
+                    <input 
+                      type="number" 
+                      value={selectedEl.fontSize} 
                       onChange={(e) => setElements(prev => prev.map(el => el.id === selectedId ? { ...el, fontSize: Number(e.target.value) } : el))}
                       className="h-[28px] border border-gray-300 rounded-[3px] px-1.5 text-[12px] outline-none text-gray-700 bg-white"
                     />
                   </div>
                 )}
 
-                <button
+                <button 
                   onClick={() => {
                     setElements(prev => prev.filter(el => el.id !== selectedId));
                     setSelectedId(null);
@@ -840,13 +840,13 @@ export function BarcodePage() {
         <div className="bg-[#4F46E5] px-4 py-[6px] flex justify-between items-center text-white h-[45px]">
           <h2 className="text-[14.5px] font-medium tracking-wide">Barcode Templates</h2>
           <div className="flex items-center gap-1.5">
-            <button
+            <button 
               onClick={() => setShowDesigner(true)}
               className="bg-[#28a745] hover:bg-[#218838] text-white px-3.5 h-8 rounded-[3px] flex items-center justify-center gap-1 text-[13px] font-bold transition-colors focus:outline-none"
             >
               <span className="text-[15px] leading-none">+</span> New Template
             </button>
-            <button
+            <button 
               onClick={() => setShowTemplates(false)}
               className="w-8 h-8 bg-[#dc3545] hover:bg-[#c82333] text-white rounded-[3px] flex items-center justify-center transition-colors focus:outline-none"
             >
@@ -860,7 +860,7 @@ export function BarcodePage() {
             <p className="text-gray-600 text-[14px] font-medium text-center">
               No templates found. Create your first template to get started.
             </p>
-            <button
+            <button 
               onClick={() => setShowDesigner(true)}
               className="mt-4 bg-[#0d6efd] hover:bg-[#0b5ed7] text-white px-4 py-2 rounded-[3px] flex items-center gap-1.5 text-[13px] font-bold transition-colors focus:outline-none"
             >
@@ -873,18 +873,18 @@ export function BarcodePage() {
   }
 
   return (
-    <div className="bg-[#f4f6f9] min-h-[calc(100vh-60px)] flex flex-col barcode-page-container print:min-h-0 print:h-auto print:bg-white print:overflow-visible">
+    <div className="bg-[#f4f6f9] min-h-[calc(100vh-60px)] flex flex-col">
       {/* Top Teal Bar */}
       <div className="bg-[#4F46E5] px-4 py-[6px] flex justify-between items-center text-white h-[45px]">
         <h2 className="text-[14.5px] font-medium tracking-wide">Barcode</h2>
         <div className="flex items-center gap-1.5">
           <button className="w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-[3px] flex items-center justify-center transition-colors focus:outline-none">
-            <YoutubeIcon className="w-4 h-4" />
+             <YoutubeIcon className="w-4 h-4" />
           </button>
           <button className="w-8 h-8 bg-[#ffc107] hover:bg-[#e0a800] text-gray-900 rounded-[3px] flex items-center justify-center transition-colors focus:outline-none">
             <RefreshCw className="w-4 h-4" strokeWidth={2.5} />
           </button>
-          <button
+          <button 
             onClick={() => navigate(-1)}
             className="w-8 h-8 bg-[#dc3545] hover:bg-[#c82333] text-white rounded-[3px] flex items-center justify-center transition-colors focus:outline-none"
           >
@@ -897,16 +897,16 @@ export function BarcodePage() {
         {/* Main Form Area */}
         <div className="p-6 flex flex-col">
           <div className="flex flex-col md:flex-row gap-6 items-stretch">
-
+            
             {/* Left Form */}
             <div className="flex-1 flex flex-col gap-4">
-
+              
               {/* Barcode Template */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-bold text-gray-800">Barcode Template</label>
                 <div className="flex gap-1.5">
                   <div className="flex-1 relative flex">
-                    <input
+                    <input 
                       list="barcode-templates"
                       value={selectedTemplateName}
                       onChange={e => setSelectedTemplateName(e.target.value)}
@@ -917,29 +917,29 @@ export function BarcodePage() {
                       {templates.map(t => <option key={t.id} value={t.name} />)}
                     </datalist>
                   </div>
-                  <button
+                  <button 
                     onClick={() => {
                       if (activeTemplate) {
-                        setTemplateName(activeTemplate.name);
-                        setPageWidth(activeTemplate.pageWidth || '50mm');
-                        setPageHeight(activeTemplate.pageHeight || '25mm');
-                        setLeftMargin(activeTemplate.leftMargin || '0.5mm');
-                        setRightMargin(activeTemplate.rightMargin || '0.5mm');
-                        setLabelGap(activeTemplate.labelGap || '1mm');
-                        setHeightGap(activeTemplate.heightGap || '1mm');
-                        setLabelCount(activeTemplate.labelsInRow || '1');
-                        setPageBreak(activeTemplate.pageBreak || 'No');
-
-                        let loadedElements = [];
-                        try {
-                          loadedElements = typeof activeTemplate.elements === 'string'
-                            ? JSON.parse(activeTemplate.elements)
-                            : (activeTemplate.elements || []);
-                        } catch (e) { }
-                        setElements(loadedElements);
+                         setTemplateName(activeTemplate.name);
+                         setPageWidth(activeTemplate.pageWidth || '50mm');
+                         setPageHeight(activeTemplate.pageHeight || '25mm');
+                         setLeftMargin(activeTemplate.leftMargin || '0.5mm');
+                         setRightMargin(activeTemplate.rightMargin || '0.5mm');
+                         setLabelGap(activeTemplate.labelGap || '1mm');
+                         setHeightGap(activeTemplate.heightGap || '1mm');
+                         setLabelCount(activeTemplate.labelsInRow || '1');
+                         setPageBreak(activeTemplate.pageBreak || 'No');
+                         
+                         let loadedElements = [];
+                         try {
+                           loadedElements = typeof activeTemplate.elements === 'string' 
+                             ? JSON.parse(activeTemplate.elements) 
+                             : (activeTemplate.elements || []);
+                         } catch (e) {}
+                         setElements(loadedElements);
                       } else {
-                        setElements([]);
-                        setTemplateName('');
+                         setElements([]);
+                         setTemplateName('');
                       }
                       setShowDesigner(true);
                     }}
@@ -955,7 +955,7 @@ export function BarcodePage() {
               <div className="flex gap-4 items-end">
                 <div className="flex-1 flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
-                    <span
+                    <span 
                       onClick={() => setSearchMode(prev => prev === 'Product Name' ? 'Product Code' : 'Product Name')}
                       className="bg-[#4F46E5] text-white text-[11px] font-bold px-2 py-0.5 rounded-[2px] leading-none select-none cursor-pointer whitespace-nowrap"
                       title="Click to toggle search mode"
@@ -963,7 +963,7 @@ export function BarcodePage() {
                       {searchMode === 'Product Code' ? 'Product Code' : 'Product Name'}
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <div
+                      <div 
                         onClick={() => setIsManufactureProduct(!isManufactureProduct)}
                         className={cn(
                           "w-[32px] h-[18px] rounded-full relative cursor-pointer border transition-colors duration-200",
@@ -979,7 +979,7 @@ export function BarcodePage() {
                     </div>
                   </div>
                   <div className="w-full h-[32px] border border-gray-300 bg-[#a6cdec] rounded-[3px] focus-within:border-[#4F46E5]">
-                    <ProductSelectDropdown
+                    <ProductSelectDropdown 
                       products={products}
                       value={selectedProduct}
                       onChange={(id) => handleProductSelect({ target: { value: id } })}
@@ -987,16 +987,16 @@ export function BarcodePage() {
                         setItemModalData(data);
                         setIsItemModalOpen(true);
                       }}
-                      onDelete={() => { }}
+                      onDelete={() => {}}
                       searchMode={searchMode}
                     />
                   </div>
                 </div>
-
+                
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[13px] font-bold text-gray-800">Product Units</label>
                   <div className="flex-1 relative flex">
-                    <input
+                    <input 
                       list="product-units-list"
                       value={selectedUnit}
                       onChange={(e) => setSelectedUnit(e.target.value)}
@@ -1013,7 +1013,7 @@ export function BarcodePage() {
 
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[13px] font-bold text-gray-800">Barcode</label>
-                  <input
+                  <input 
                     type="text"
                     value={barcodeInput}
                     onChange={(e) => setBarcodeInput(e.target.value)}
@@ -1027,7 +1027,7 @@ export function BarcodePage() {
               <div className="flex gap-4">
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[13px] font-bold text-gray-800">MRP</label>
-                  <input
+                  <input 
                     type="text"
                     value={mrpInput}
                     onChange={(e) => setMrpInput(e.target.value)}
@@ -1036,7 +1036,7 @@ export function BarcodePage() {
                 </div>
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[13px] font-bold text-gray-800">Sale Price</label>
-                  <input
+                  <input 
                     type="text"
                     value={salePriceInput}
                     onChange={(e) => setSalePriceInput(e.target.value)}
@@ -1045,7 +1045,7 @@ export function BarcodePage() {
                 </div>
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[13px] font-bold text-gray-800">Whole Sale Price</label>
-                  <input
+                  <input 
                     type="text"
                     value={wholesalePriceInput}
                     onChange={(e) => setWholesalePriceInput(e.target.value)}
@@ -1059,7 +1059,7 @@ export function BarcodePage() {
                 <div className="flex gap-4">
                   <div className="flex-1 flex flex-col gap-1.5">
                     <label className="text-[13px] font-bold text-gray-800">Date of Manufacture</label>
-                    <input
+                    <input 
                       type="date"
                       value={mfgDate}
                       onChange={(e) => setMfgDate(e.target.value)}
@@ -1068,7 +1068,7 @@ export function BarcodePage() {
                   </div>
                   <div className="flex-1 flex flex-col gap-1.5">
                     <label className="text-[13px] font-bold text-gray-800">Batch No.</label>
-                    <input
+                    <input 
                       type="text"
                       placeholder="Enter Batch No."
                       className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none placeholder-gray-400 text-gray-700 bg-white focus:border-[#4F46E5]"
@@ -1076,7 +1076,7 @@ export function BarcodePage() {
                   </div>
                   <div className="flex-1 flex flex-col gap-1.5">
                     <label className="text-[13px] font-bold text-gray-800">Net Quantity</label>
-                    <input
+                    <input 
                       type="text"
                       defaultValue="0"
                       className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 bg-white focus:border-[#4F46E5]"
@@ -1090,7 +1090,7 @@ export function BarcodePage() {
                 <div className="flex gap-4">
                   <div className="flex-1 flex flex-col gap-1.5">
                     <label className="text-[13px] font-bold text-gray-800">Marketed By</label>
-                    <input
+                    <input 
                       type="text"
                       placeholder="Enter Marketed By"
                       className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none placeholder-gray-400 text-gray-700 bg-white focus:border-[#4F46E5]"
@@ -1098,7 +1098,7 @@ export function BarcodePage() {
                   </div>
                   <div className="flex-[2] flex flex-col gap-1.5">
                     <label className="text-[13px] font-bold text-gray-800">Marketed Address</label>
-                    <input
+                    <input 
                       type="text"
                       placeholder="Enter Marketed Address"
                       className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none placeholder-gray-400 text-gray-700 bg-white focus:border-[#4F46E5]"
@@ -1111,7 +1111,7 @@ export function BarcodePage() {
               <div className="flex gap-4">
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[13px] font-bold text-gray-800">Quantity to Print</label>
-                  <input
+                  <input 
                     type="number"
                     value={printQty}
                     onChange={(e) => setPrintQty(e.target.value)}
@@ -1120,7 +1120,7 @@ export function BarcodePage() {
                 </div>
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[13px] font-bold text-gray-800">Auto Quantity</label>
-                  <input
+                  <input 
                     type="text"
                     defaultValue="0"
                     className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 bg-white focus:border-[#4F46E5]"
@@ -1134,27 +1134,27 @@ export function BarcodePage() {
             {/* Right Preview */}
             <div className="w-full md:w-[380px] flex flex-col">
               <div className="w-full h-full min-h-[190px] border border-gray-800 bg-[#f8f9fa] flex flex-col items-center justify-center rounded-[3px] p-4 gap-6">
-
+                
                 {selectedProduct ? (
                   <div className="bg-white border border-gray-300 shadow-sm p-3 w-[240px] flex flex-col items-center text-center">
                     <span className="text-[14px] font-bold text-gray-900 mb-1 leading-tight">{products.find(p => p.id.toString() === selectedProduct.toString())?.name || 'Product'}</span>
-
+                    
                     <div className="flex items-center gap-3 text-[11px] font-bold text-gray-800 mb-2">
-                      <span>MRP: ₹{mrpInput}</span>
-                      <span>Price: ₹{salePriceInput}</span>
+                       <span>MRP: Γé╣{mrpInput}</span>
+                       <span>Price: Γé╣{salePriceInput}</span>
                     </div>
-
+                    
                     <Barcode value={barcodeInput || '1234567890'} width={1.5} height={40} fontSize={13} margin={0} displayValue={true} />
                   </div>
                 ) : (
                   <div className="text-gray-400 text-[13px] font-medium flex flex-col items-center">
-                    <BarcodeIcon className="w-10 h-10 mb-2 opacity-30" />
-                    <span>No product selected for preview</span>
+                     <BarcodeIcon className="w-10 h-10 mb-2 opacity-30" />
+                     <span>No product selected for preview</span>
                   </div>
                 )}
 
                 <div className="flex items-center gap-2">
-                  <div
+                  <div 
                     onClick={() => setIsSpecialCommision(!isSpecialCommision)}
                     className={cn(
                       "w-[32px] h-[18px] rounded-full relative cursor-pointer transition-colors duration-200 border",
@@ -1175,7 +1175,7 @@ export function BarcodePage() {
 
           {/* Buttons */}
           <div className="flex gap-2 justify-center mt-6 mb-2">
-            <button
+            <button 
               onClick={handleAddToList}
               className="bg-[#28a745] hover:bg-[#218838] text-white px-4 py-1.5 rounded-[3px] text-[13px] font-medium flex items-center justify-center gap-1.5 transition-colors focus:outline-none"
             >
@@ -1212,7 +1212,7 @@ export function BarcodePage() {
                       <td className="py-2 px-2 text-left text-[12px] font-medium border-r border-gray-200">{item.salePrice}</td>
                       <td className="py-2 px-2 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button
+                          <button 
                             onClick={() => {
                               setPrintRowQty(item.quantity || 1);
                               setPrintRowModal(item);
@@ -1222,14 +1222,14 @@ export function BarcodePage() {
                           >
                             <Printer className="w-3.5 h-3.5" />
                           </button>
-                          <button
+                          <button 
                             onClick={() => handleEditItem(item)}
                             className="text-[#0d6efd] hover:text-[#0b5ed7] bg-[#e6f0ff] p-1.5 rounded-sm transition-colors focus:outline-none"
                             title="Edit"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
-                          <button
+                          <button 
                             onClick={() => handleRemoveFromList(item.id)}
                             className="text-[#dc3545] hover:text-[#c82333] bg-[#fce4e4] p-1.5 rounded-sm transition-colors focus:outline-none"
                             title="Delete"
@@ -1244,14 +1244,14 @@ export function BarcodePage() {
                         <td colSpan="6" className="py-2 px-4">
                           <div className="flex items-center justify-center gap-4">
                             <span className="text-[#1a365d] font-bold text-[13px]">Enter Quantity to Print:</span>
-                            <input
-                              type="number"
-                              value={printRowQty}
+                            <input 
+                              type="number" 
+                              value={printRowQty} 
                               onChange={(e) => setPrintRowQty(e.target.value)}
                               className="w-[60px] h-[26px] bg-[#d0e5f5] border border-blue-400 rounded-[3px] text-center font-bold text-blue-700 outline-none"
                               min="1"
                             />
-                            <button
+                            <button 
                               onClick={() => {
                                 window.print();
                                 setTimeout(() => setPrintRowModal(null), 100);
@@ -1260,7 +1260,7 @@ export function BarcodePage() {
                             >
                               <Printer className="w-3.5 h-3.5" /> Print
                             </button>
-                            <button
+                            <button 
                               onClick={() => setPrintRowModal(null)}
                               className="bg-[#6c757d] hover:bg-[#5a6268] text-white px-3 py-1 rounded-[3px] font-bold text-[12px] flex items-center gap-1 shadow-sm"
                             >
@@ -1292,20 +1292,20 @@ export function BarcodePage() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-bold text-gray-800">Quantity to Print</label>
-                <input
-                  type="number"
+                <input 
+                  type="number" 
                   className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 focus:border-[#4F46E5]"
                   value={editingItem.quantity}
-                  onChange={e => setEditingItem({ ...editingItem, quantity: e.target.value })}
+                  onChange={e => setEditingItem({...editingItem, quantity: e.target.value})}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-bold text-gray-800">Sale Price</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 focus:border-[#4F46E5]"
                   value={editingItem.salePrice}
-                  onChange={e => setEditingItem({ ...editingItem, salePrice: e.target.value })}
+                  onChange={e => setEditingItem({...editingItem, salePrice: e.target.value})}
                 />
               </div>
               <div className="flex gap-2 justify-end mt-4">
@@ -1358,7 +1358,7 @@ export function BarcodePage() {
             };
 
             const isEdit = itemModalData && itemModalData.id;
-            const res = isEdit
+            const res = isEdit 
               ? await apiClient.put(`/products/${itemModalData.id}`, payload)
               : await apiClient.post('/products', payload);
 
@@ -1367,11 +1367,11 @@ export function BarcodePage() {
               if (res.data.data && res.data.data.id) {
                 setSelectedProduct(res.data.data.id.toString());
               } else if (!isEdit) {
-                // Try to select by name if ID isn't returned
-                const updatedProdRes = await apiClient.get('/products');
-                const allProds = updatedProdRes.data?.data || [];
-                const justAdded = allProds.find(p => p.name === payload.name);
-                if (justAdded) setSelectedProduct(justAdded.id.toString());
+                 // Try to select by name if ID isn't returned
+                 const updatedProdRes = await apiClient.get('/products');
+                 const allProds = updatedProdRes.data?.data || [];
+                 const justAdded = allProds.find(p => p.name === payload.name);
+                 if (justAdded) setSelectedProduct(justAdded.id.toString());
               }
             }
           } catch (error) {
@@ -1389,8 +1389,8 @@ export function BarcodePage() {
         {`
           @media print {
             @page {
-              size: ${activeTemplate?.pageWidth || '50mm'} ${activeTemplate?.pageHeight || '25mm'};
-              margin: ${activeTemplate?.marginTop || '0mm'} ${activeTemplate?.marginRight || '0mm'} ${activeTemplate?.marginBottom || '0mm'} ${activeTemplate?.marginLeft || '0mm'};
+              size: ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? 'A4 portrait' : `${activeTemplate?.pageWidth || '50mm'} ${activeTemplate?.pageHeight || '25mm'}`};
+              margin: ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? '10mm 8mm' : `${activeTemplate?.marginTop || '0mm'} ${activeTemplate?.marginRight || '0mm'} ${activeTemplate?.marginBottom || '0mm'} ${activeTemplate?.marginLeft || '0mm'}`};
             }
             html, body, #root {
               margin: 0 !important;
@@ -1401,125 +1401,134 @@ export function BarcodePage() {
             }
             body * { visibility: hidden; }
             #qr-print-section, #qr-print-section * { visibility: visible; }
-            
             #qr-print-section {
               position: absolute;
               left: 0;
               top: 0;
               width: 100%;
-              display: flex;
-              flex-wrap: wrap;
-              gap: ${activeTemplate?.labelGap || '2mm'};
+              display: ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? 'grid' : 'flex'};
+              ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? `grid-template-columns: repeat(${parseInt(activeTemplate?.labelsInRow || labelCount)}, 1fr);` : 'flex-wrap: wrap;'}
+              gap: ${activeTemplate?.labelGap || '2mm'} ${activeTemplate?.heightGap || '2mm'};
               padding: 0;
               margin: 0;
+              box-sizing: border-box;
             }
             .print-item {
-              width: ${activeTemplate?.pageWidth || '50mm'};
-              height: ${activeTemplate?.pageHeight || '25mm'};
+              width: ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? '100%' : (activeTemplate?.pageWidth || '50mm')};
+              height: ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? (activeTemplate?.pageHeight || '45mm') : (activeTemplate?.pageHeight || '25mm')};
               overflow: hidden;
               box-sizing: border-box;
               margin: 0;
-              padding: 1.5mm;
-              ${pageBreak === 'Yes' ? 'page-break-after: always; break-after: page;' : 'page-break-inside: avoid; break-inside: avoid;'}
-            }
-          };
-              overflow: hidden;
-              box-sizing: border-box;
-              margin: 0;
-              padding: 1.5mm;
-              ${pageBreak === 'Yes' ? 'page-break-after: always; break-after: page;' : 'page-break-inside: avoid; break-inside: avoid;'}
+              padding: 3mm 4mm;
+              border: 1.5px solid #000 !important;
+              border-radius: 4px;
+              background: white;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 
+                ? 'page-break-inside: avoid; break-inside: avoid; page-break-after: avoid; break-after: avoid;' 
+                : (pageBreak === 'Yes' ? 'page-break-after: always; break-after: page;' : 'page-break-inside: avoid; break-inside: avoid;')}
             }
           }
         `}
       </style>
       <div id="qr-print-section" className="hidden print:flex print:flex-wrap">
-        {printRowModal && Array.from({ length: Math.max(1, parseInt(printRowQty) || 1) }).map((_, i) => {
-          let tmplElements = [];
-          if (activeTemplate?.elements) {
-            try {
-              tmplElements = typeof activeTemplate.elements === 'string' ? JSON.parse(activeTemplate.elements) : activeTemplate.elements;
-            } catch (e) { }
-          }
+        {(() => {
+          const itemsToPrint = printRowModal 
+            ? Array.from({ length: Math.max(1, parseInt(printRowQty) || 1) }).map(() => printRowModal)
+            : printList.flatMap(item => Array.from({ length: Math.max(1, parseInt(item.quantity) || 1) }).map(() => item));
 
-          // Enforce Render Static Template (Fallback)
-          return (
-            <div key={i} className="print-item relative bg-white p-[1.5mm] border-[1.5px] border-black box-border flex items-center justify-between">
-              <div className="flex flex-col items-start justify-center flex-1 max-w-[65%]">
-                {(activeTemplate?.showHeading !== false) && (
-                  <span className="text-[10px] font-bold text-[#034694] leading-none uppercase">
-                    {activeTemplate?.barcodeHeading || 'SWAYAM BILL'}
-                  </span>
-                )}
-                <span className="text-[13px] font-extrabold text-[#034694] leading-[1.15] uppercase mt-[1.5px] break-all">
-                  {printRowModal.name}
-                </span>
-                <div className="flex flex-col mt-[2px]">
-                  {(activeTemplate?.showMRP !== false) && (
-                    <span className="text-[10px] font-bold text-[#034694] leading-tight">
-                      <span className="text-black">MRP : </span>₹{printRowModal.mrp || 0}/-
+          return itemsToPrint.map((item, i) => {
+            let tmplElements = [];
+            if (activeTemplate?.elements) {
+              try {
+                tmplElements = typeof activeTemplate.elements === 'string' ? JSON.parse(activeTemplate.elements) : activeTemplate.elements;
+              } catch (err) {
+                console.warn('Failed to parse active template elements:', err);
+              }
+            }
+            
+            return (
+              <div key={i} className="print-item bg-white p-[2mm] border-[1.5px] border-black box-border flex items-center justify-between">
+                <div className="flex flex-col items-start justify-center flex-1 max-w-[70%]">
+                  {(activeTemplate?.showHeading !== false) && (
+                    <span className="text-[11px] font-bold text-[#034694] leading-tight uppercase">
+                      {activeTemplate?.barcodeHeading || 'SWAYAM BILL'}
                     </span>
                   )}
-                  {(activeTemplate?.showSalePrice !== false) && (
-                    <span className="text-[10px] font-bold text-[#034694] leading-tight">
-                      <span className="text-black">PRICE : </span>{printRowModal.salePrice || printRowModal.price || 0}/-
-                    </span>
+                  <span className="text-[15px] font-extrabold text-[#034694] leading-tight uppercase mt-[1px] break-all">
+                    {item.name}
+                  </span>
+                  <div className="flex flex-col mt-[2px]">
+                    {(activeTemplate?.showMRP !== false) && (
+                      <span className="text-[11px] font-bold text-[#034694]">
+                        <span className="text-black font-semibold">MRP : </span>₹{item.mrp || 0}/-
+                      </span>
+                    )}
+                    {(activeTemplate?.showSalePrice !== false) && (
+                      <span className="text-[11px] font-bold text-[#034694]">
+                        <span className="text-black font-semibold">PRICE : </span>₹{item.salePrice || item.price || 0}/-
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex flex-col items-center justify-center shrink-0">
+                  {!activeTemplate?.hideBarcode && (
+                    <>
+                      {(!tmplElements || tmplElements.length === 0) ? (
+                        <QRCodeSVG 
+                          value={item.barcode || item.id?.toString() || '12345'} 
+                          size={45} 
+                        />
+                      ) : tmplElements?.some(el => el.type === 'barcode') ? (
+                        <Barcode
+                          value={item.barcode || item.id?.toString() || '12345'}
+                          width={1.2}
+                          height={35}
+                          fontSize={10}
+                          margin={0}
+                          displayValue={false}
+                          background="transparent"
+                        />
+                      ) : tmplElements?.some(el => el.type === 'qrcode') ? (
+                        <QRCodeSVG
+                          value={item.barcode || item.id?.toString() || '12345'}
+                          size={45}
+                        />
+                      ) : tmplElements?.some(el => el.type === 'image') ? (
+                        <div className="w-[45px] h-[45px] border border-dashed border-gray-400 flex flex-col items-center justify-center text-[9px] text-gray-500 font-bold p-1 overflow-hidden bg-gray-100">
+                          <ImageIcon className="w-4 h-4 text-gray-400 shrink-0 mb-0.5" />
+                          <span className="truncate">Image</span>
+                        </div>
+                      ) : tmplElements?.some(el => el.type === 'circle') ? (
+                        <div className="w-[45px] h-[45px] border-[1.5px] border-black box-border rounded-full"></div>
+                      ) : tmplElements?.some(el => el.type === 'rectangle') ? (
+                        <div className="w-[45px] h-[45px] border-[1.5px] border-black box-border"></div>
+                      ) : tmplElements?.some(el => el.type === 'line') ? (
+                        <div className="w-[45px] h-[1.5px] bg-black"></div>
+                      ) : tmplElements?.some(el => el.type === 'text') ? (
+                        <span style={{ fontSize: `${tmplElements.find(el => el.type === 'text').fontSize || 12}px` }} className="font-bold text-black text-center break-words px-1">
+                          {tmplElements.find(el => el.type === 'text').field === 'Product Name' ? item.name :
+                            tmplElements.find(el => el.type === 'text').field === 'MRP' ? `₹${item.mrp || 0}` :
+                              tmplElements.find(el => el.type === 'text').field === 'Sale Price' ? `${item.salePrice || item.price || 0}` :
+                                tmplElements.find(el => el.type === 'text').text}
+                        </span>
+                      ) : null}
+
+                      {(!tmplElements || tmplElements.length === 0 || tmplElements.some(el => el.type === 'barcode' || el.type === 'qrcode')) && (
+                        <span className="text-[10px] font-bold text-[#034694] mt-[2px] tracking-wide">
+                          {item.barcode || item.id?.toString() || '12345'}
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center shrink-0 max-w-[40%] overflow-hidden">
-                {!activeTemplate?.hideBarcode && (
-                  <>
-                    {(!tmplElements || tmplElements.length === 0) ? (
-                      <QRCodeSVG
-                        value={printRowModal.barcode || printRowModal.id?.toString() || '12345'}
-                        size={45}
-                      />
-                    ) : tmplElements?.some(el => el.type === 'barcode') ? (
-                      <Barcode
-                        value={printRowModal.barcode || printRowModal.id?.toString() || '12345'}
-                        width={1.2}
-                        height={35}
-                        fontSize={10}
-                        margin={0}
-                        displayValue={false}
-                        background="transparent"
-                      />
-                    ) : tmplElements?.some(el => el.type === 'qrcode') ? (
-                      <QRCodeSVG
-                        value={printRowModal.barcode || printRowModal.id?.toString() || '12345'}
-                        size={45}
-                      />
-                    ) : tmplElements?.some(el => el.type === 'image') ? (
-                      <div className="w-[45px] h-[45px] border border-dashed border-gray-400 flex flex-col items-center justify-center text-[9px] text-gray-500 font-bold p-1 overflow-hidden bg-gray-100">
-                        <ImageIcon className="w-4 h-4 text-gray-400 shrink-0 mb-0.5" />
-                        <span className="truncate">Image</span>
-                      </div>
-                    ) : tmplElements?.some(el => el.type === 'circle') ? (
-                      <div className="w-[45px] h-[45px] border-[1.5px] border-black box-border rounded-full"></div>
-                    ) : tmplElements?.some(el => el.type === 'rectangle') ? (
-                      <div className="w-[45px] h-[45px] border-[1.5px] border-black box-border"></div>
-                    ) : tmplElements?.some(el => el.type === 'line') ? (
-                      <div className="w-[45px] h-[1.5px] bg-black"></div>
-                    ) : tmplElements?.some(el => el.type === 'text') ? (
-                      <span style={{ fontSize: `${tmplElements.find(el => el.type === 'text').fontSize || 12}px` }} className="font-bold text-black text-center break-words px-1">
-                        {tmplElements.find(el => el.type === 'text').field === 'Product Name' ? printRowModal.name :
-                          tmplElements.find(el => el.type === 'text').field === 'MRP' ? `₹${printRowModal.mrp || 0}` :
-                            tmplElements.find(el => el.type === 'text').field === 'Sale Price' ? `${printRowModal.salePrice || printRowModal.price || 0}` :
-                              tmplElements.find(el => el.type === 'text').text}
-                      </span>
-                    ) : null}
-
-                    {(!tmplElements || tmplElements.length === 0 || tmplElements.some(el => el.type === 'barcode' || el.type === 'qrcode')) && (
-                      <span className="text-[10px] font-bold text-[#034694] mt-[2px]">
-                        {printRowModal.barcode || printRowModal.id?.toString() || '12345'}
-                      </span>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          });
+        })()}
       </div>
 
     </div>
