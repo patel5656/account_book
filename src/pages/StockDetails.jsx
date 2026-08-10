@@ -121,10 +121,13 @@ export function StockDetails() {
     }
     const matchCat = !categoryFilter || r.category === categoryFilter;
     const matchWh = !warehouseFilter || r.warehouse === warehouseFilter;
-    const matchStock = !stockFilter ||
-      (stockFilter === 'low' && r.stock > 0 && r.stock < 10) ||
-      (stockFilter === 'instock' && r.stock >= 10) ||
-      (stockFilter === 'out' && r.stock === 0);
+    const matchStock = !stockFilter || stockFilter === 'Show All' ||
+      (stockFilter === 'Only In Stock' && r.stock > 0) ||
+      (stockFilter === 'Only Negative' && r.stock < 0) ||
+      (stockFilter === 'Zero Stock' && r.stock === 0) ||
+      (stockFilter === 'Expire' && false) || // Not mapped yet
+      (stockFilter === 'Expiry Soon' && false) || // Not mapped yet
+      (stockFilter === 'Stock Aging' && false); // Not mapped yet
     return matchSearch && matchCat && matchStock && matchWh;
   });
 
@@ -461,14 +464,18 @@ export function StockDetails() {
                  />
                </div>
                <div className="w-full sm:w-auto">
-                 <select className="border border-gray-300 rounded-[3px] px-3 py-1.5 text-[13px] outline-none bg-white text-gray-600 w-full sm:w-[150px]">
-                   <option>Show All</option>
-                   <option>Only In Stock</option>
-                   <option>Only Negative</option>
-                   <option>Zero Stock</option>
-                   <option>Expire</option>
-                   <option>Expiry Soon</option>
-                   <option>Stock Aging</option>
+                 <select 
+                   value={stockFilter}
+                   onChange={(e) => setStockFilter(e.target.value)}
+                   className="border border-gray-300 rounded-[3px] px-3 py-1.5 text-[13px] outline-none bg-white text-gray-600 w-full sm:w-[150px]"
+                 >
+                   <option value="Show All">Show All</option>
+                   <option value="Only In Stock">Only In Stock</option>
+                   <option value="Only Negative">Only Negative</option>
+                   <option value="Zero Stock">Zero Stock</option>
+                   <option value="Expire">Expire</option>
+                   <option value="Expiry Soon">Expiry Soon</option>
+                   <option value="Stock Aging">Stock Aging</option>
                  </select>
                </div>
             </div>
@@ -497,9 +504,9 @@ export function StockDetails() {
                     <div className="text-right">
                       <div className="text-[13px] text-gray-600">
                         {(item.qty != null || item.stock != null) && (
-                          <>P.QTY : <span className="font-bold text-gray-800">{item.stock ?? item.qty} {item.purchaseUnit || item.baseUnit?.toLowerCase()}</span> <span className="text-gray-300 mx-1">|</span> </>
+                          <>P.QTY : <span className="font-bold text-gray-800">{item.stock ?? item.qty} {item.baseUnit?.toLowerCase() || item.purchaseUnit}</span> <span className="text-gray-300 mx-1">|</span> </>
                         )}
-                        value : <span className="font-bold text-gray-800">{formatAmount(item.purchasePrice || 0).replace('₹', '')}</span>
+                        value : <span className="font-bold text-gray-800">{formatAmount((item.purchasePrice || 0) * (item.stock ?? item.qty ?? 0)).replace('₹', '')}</span>
                       </div>
                       <div className="text-[12px] text-gray-500 mt-1 flex justify-end gap-3">
                         {item.secOpeningQty != null && (
@@ -507,7 +514,7 @@ export function StockDetails() {
                         )}
                       </div>
                       <div className="text-[11px] text-gray-500 mt-2">
-                        HSN : <span className="text-blue-500">{item.hsnCode || '+Add'}</span> <span className="text-gray-300 mx-1">|</span> GST : {parseInt(item.tax) || 0} <span className="text-gray-300 mx-1">|</span> TAXABLE : {formatAmount((item.stock * item.price || 0) * (1 - ((parseInt(item.tax) || 0)/100))).replace('₹', '')}
+                        HSN : <span className="text-blue-500">{item.hsnCode || '+Add'}</span> <span className="text-gray-300 mx-1">|</span> GST : {parseInt(item.tax) || 0} <span className="text-gray-300 mx-1">|</span> TAXABLE : {formatAmount(((item.purchasePrice || 0) * (item.stock ?? item.qty ?? 0)) * 100 / (100 + (parseInt(item.tax) || 0))).replace('₹', '')}
                       </div>
                     </div>
                   </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Edit, Trash2 } from 'lucide-react';
 import { getDayBookSummary } from '../api/financial';
+import apiClient from '../api/apiClient';
 
 export function DayBookSummary() {
   const navigate = useNavigate();
@@ -9,14 +10,53 @@ export function DayBookSummary() {
   const [searchByVoucher, setSearchByVoucher] = useState(false);
   const [voucherType, setVoucherType] = useState('');
   const [withItems, setWithItems] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dateFilter, setDateFilter] = useState('Today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const response = await getDayBookSummary(dateType, selectedDate, withItems, searchByVoucher ? voucherType : '');
+      let apiFromDate = '';
+      let apiToDate = '';
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (dateFilter === 'Today') {
+        apiFromDate = today.toISOString().split('T')[0];
+        apiToDate = apiFromDate;
+      } else if (dateFilter === 'Yesterday') {
+        const y = new Date(today);
+        y.setDate(y.getDate() - 1);
+        apiFromDate = y.toISOString().split('T')[0];
+        apiToDate = apiFromDate;
+      } else if (dateFilter === 'Last 7 Days') {
+        const l7 = new Date(today);
+        l7.setDate(l7.getDate() - 7);
+        apiFromDate = l7.toISOString().split('T')[0];
+        apiToDate = today.toISOString().split('T')[0];
+      } else if (dateFilter === 'Last 30 Days') {
+        const l30 = new Date(today);
+        l30.setDate(l30.getDate() - 30);
+        apiFromDate = l30.toISOString().split('T')[0];
+        apiToDate = today.toISOString().split('T')[0];
+      } else if (dateFilter === 'This Month') {
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        apiFromDate = firstDay.toISOString().split('T')[0];
+        apiToDate = today.toISOString().split('T')[0];
+      } else if (dateFilter === 'Last Month') {
+        const firstDayLM = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastDayLM = new Date(today.getFullYear(), today.getMonth(), 0);
+        apiFromDate = firstDayLM.toISOString().split('T')[0];
+        apiToDate = lastDayLM.toISOString().split('T')[0];
+      } else if (dateFilter === 'Custom Range') {
+        apiFromDate = startDate;
+        apiToDate = endDate;
+      }
+
+      const response = await getDayBookSummary(dateType, apiFromDate, apiToDate, withItems, searchByVoucher ? voucherType : '');
       if (response.data && response.data.success) {
         setTransactions(response.data.data);
       }
@@ -29,19 +69,84 @@ export function DayBookSummary() {
 
   useEffect(() => {
     fetchTransactions();
-  }, [dateType, selectedDate, withItems]);
+  }, [dateType, dateFilter, startDate, endDate, withItems, searchByVoucher, voucherType]);
+
+  const handleEdit = (tx) => {
+    const idParts = tx.id.split('_');
+    const prefix = idParts[0];
+    const dbId = idParts[1];
+
+    if (prefix === 'inv') {
+      if (tx.voucherType === 'SALES') {
+        navigate(`/admin/sales-invoice?id=${dbId}`);
+      } else if (tx.voucherType === 'PURCHASE') {
+        navigate(`/admin/create_invoices/company_purchase?id=${dbId}`);
+      } else if (tx.voucherType === 'SALES_RETURN') {
+        navigate(`/admin/sales-return-invoice?id=${dbId}`);
+      } else if (tx.voucherType === 'PURCHASE_RETURN') {
+        navigate(`/admin/create_invoices/company_purchase_return?id=${dbId}`);
+      }
+    } else if (prefix === 'pay') {
+      alert('Edit for payment/receipt is not fully implemented yet.');
+    } else if (prefix === 'exp') {
+      navigate(`/admin/expenses-ledger/expense_ledger?id=${dbId}`);
+    } else if (tx.voucherType === 'ADJUSTMENT') {
+      navigate(`/admin/stock-adjustment?id=${dbId}`);
+    }
+  };
+
+  const handleDelete = async (tx) => {
+    if (!window.confirm(`Are you sure you want to delete this ${tx.voucherType} transaction?`)) return;
+    
+    try {
+      const idParts = tx.id.split('_');
+      const prefix = idParts[0];
+      const dbId = idParts[1];
+
+      if (prefix === 'inv') {
+        await apiClient.delete(`/inventory/${dbId}`);
+      } else if (prefix === 'pay') {
+        await apiClient.delete(`/payments/transactions/${dbId}`);
+      } else if (prefix === 'exp') {
+        await apiClient.delete(`/expenses/transactions/${dbId}`);
+      }
+      
+      fetchTransactions();
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert('Failed to delete. Please try again.');
+    }
+  };
 
   const handleSearch = () => {
     fetchTransactions();
   };
 
   const totals = transactions.reduce((acc, curr) => {
-    acc.debit += (curr.debit || 0);
-    acc.paymentIn += (curr.paymentIn || 0);
+    const isInvoice = ['SALES', 'PURCHASE', 'SALES_RETURN', 'PURCHASE_RETURN'].includes(curr.voucherType);
+    const displayDebit = isInvoice ? (curr.debit || 0) + (curr.paymentIn || 0) + (curr.paymentOut || 0) : (curr.debit || 0);
+    
+    let displayPaymentIn = curr.paymentIn || 0;
+    // POS bills are typically cash sales
+    if (curr.voucherNo && curr.voucherNo.startsWith('POS-') && displayPaymentIn === 0) {
+      displayPaymentIn = displayDebit;
+    }
+
+    acc.debit += displayDebit;
+    acc.paymentIn += displayPaymentIn;
     acc.paymentOut += (curr.paymentOut || 0);
     acc.discount += (curr.discount || 0);
     return acc;
   }, { debit: 0, paymentIn: 0, paymentOut: 0, discount: 0 });
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = d.toLocaleString('en-US', { month: 'short' });
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
   return (
     <div className="bg-white min-h-[calc(100vh-45px)] p-6 relative pb-16">
@@ -117,19 +222,50 @@ export function DayBookSummary() {
           </select>
         </div>
 
-        {/* Transaction Date */}
-        <div className="flex-1 max-w-[300px]">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[14px] font-bold text-gray-800">Transaction Date :</span>
-            <span className="text-[13px] font-bold text-[#4F46E5]">({new Date(selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')})</span>
+        {/* Filter: Transaction Date */}
+        <div className="flex-1 max-w-[200px]">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[14px] font-bold text-gray-800">{dateType === 'Transaction Date' ? 'Transaction Date' : 'Modified Date'} :</span>
           </div>
-          <input 
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+          <select 
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
             className="w-full min-w-0 border border-gray-300 bg-white rounded-[3px] px-3 py-1.5 text-[14px] outline-none text-gray-800 font-medium"
-          />
+          >
+            <option>All Time</option>
+            <option>Today</option>
+            <option>Yesterday</option>
+            <option>Last 7 Days</option>
+            <option>Last 30 Days</option>
+            <option>This Month</option>
+            <option>Last Month</option>
+            <option>Custom Range</option>
+          </select>
         </div>
+
+        {/* Custom Date Range Picker */}
+        {dateFilter === 'Custom Range' && (
+          <div className="flex gap-2 w-auto items-end animate-in fade-in zoom-in duration-200">
+            <div className="w-[130px]">
+              <label className="block text-[13px] font-bold text-gray-800 mb-1">From</label>
+              <input 
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full min-w-0 border border-gray-300 bg-white rounded-[3px] px-2 py-1.5 text-[13px] outline-none text-gray-800 font-medium"
+              />
+            </div>
+            <div className="w-[130px]">
+              <label className="block text-[13px] font-bold text-gray-800 mb-1">To</label>
+              <input 
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full min-w-0 border border-gray-300 bg-white rounded-[3px] px-2 py-1.5 text-[13px] outline-none text-gray-800 font-medium"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Search Button */}
         <div>
@@ -145,7 +281,7 @@ export function DayBookSummary() {
       <div className="border border-gray-200 rounded-sm">
         <div className="w-full">
           {/* Header */}
-          <div className="grid grid-cols-[80px_100px_1fr_120px_100px_100px_100px_80px_80px] bg-white text-gray-800 border-b border-gray-200">
+          <div className="grid grid-cols-[100px_160px_1fr_110px_90px_90px_90px_80px_80px] bg-white text-gray-800 border-b border-gray-200">
             <div className="border-r border-gray-200 py-2.5 px-2 text-[13px] font-bold text-center">Date</div>
             <div className="border-r border-gray-200 py-2.5 px-2 text-[13px] font-bold text-center">Voucher No</div>
             <div className="border-r border-gray-200 py-2.5 px-2 text-[13px] font-bold text-center">Particular</div>
@@ -165,19 +301,39 @@ export function DayBookSummary() {
               No transactions found
             </div>
           ) : (
-            transactions.map((tx) => (
+            transactions.map((tx) => {
+              const isInvoice = ['SALES', 'PURCHASE', 'SALES_RETURN', 'PURCHASE_RETURN'].includes(tx.voucherType);
+              const displayDebit = isInvoice ? (tx.debit || 0) + (tx.paymentIn || 0) + (tx.paymentOut || 0) : (tx.debit || 0);
+              
+              let displayPaymentIn = tx.paymentIn || 0;
+              if (tx.voucherNo && tx.voucherNo.startsWith('POS-') && displayPaymentIn === 0) {
+                displayPaymentIn = displayDebit;
+              }
+
+              return (
               <React.Fragment key={tx.id}>
-                <div className="grid grid-cols-[80px_100px_1fr_120px_100px_100px_100px_80px_80px] bg-white border-b border-gray-200">
-                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center">{new Date(tx.date).toLocaleDateString('en-GB')}</div>
-                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center">{tx.voucherNo}</div>
-                  <div className="border-r border-gray-200 py-2 px-2 text-[13px]">{tx.particular}</div>
-                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center">{tx.voucherType}</div>
-                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-right font-medium">{tx.debit ? tx.debit.toFixed(2) : ''}</div>
-                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-right font-medium text-green-600">{tx.paymentIn ? tx.paymentIn.toFixed(2) : ''}</div>
-                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-right font-medium text-red-600">{tx.paymentOut ? tx.paymentOut.toFixed(2) : ''}</div>
-                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-right font-medium text-blue-600">{tx.discount ? tx.discount.toFixed(2) : ''}</div>
-                  <div className="py-2 px-2 text-[13px] text-center">
-                    {/* Action button */}
+                <div className="grid grid-cols-[100px_160px_1fr_110px_90px_90px_90px_80px_80px] bg-white border-b border-gray-200 items-center">
+                  <div className="border-r border-gray-200 py-2 px-2 flex flex-col items-center justify-center text-center">
+                    <span className="text-[13px] text-gray-800">{formatDate(tx.date)}</span>
+                    <span className="text-[10px] text-gray-600 mt-0.5 whitespace-nowrap">({tx.userName || 'ADMIN'})</span>
+                  </div>
+                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center break-all">{tx.voucherNo}</div>
+                  <div className="border-r border-gray-200 py-2 px-2 flex flex-col items-center justify-center text-center">
+                    <span className="text-[13px] text-gray-800">{tx.particular || '-'}</span>
+                    {tx.voucherType === 'SALES' || tx.voucherType === 'RECEIPT' || displayPaymentIn > 0 ? (
+                      <span className="text-[#28a745] text-[12px] mt-0.5 font-medium tracking-tight">In: {tx.paymentMode || 'Cash Account'}</span>
+                    ) : tx.voucherType === 'PURCHASE' || tx.voucherType === 'PAYMENT' || tx.paymentOut > 0 ? (
+                      <span className="text-[#dc3545] text-[12px] mt-0.5 font-medium tracking-tight">Out: {tx.paymentMode || 'Cash Account'}</span>
+                    ) : null}
+                  </div>
+                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center text-gray-700">{tx.voucherType === 'SALES' ? 'Sale' : tx.voucherType === 'PURCHASE' ? 'Purchase' : tx.voucherType}</div>
+                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center text-gray-800">{displayDebit ? displayDebit.toLocaleString() : '0'}</div>
+                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center text-gray-800">{displayPaymentIn ? displayPaymentIn.toLocaleString() : '0'}</div>
+                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center text-gray-800">{tx.paymentOut ? tx.paymentOut.toLocaleString() : '0'}</div>
+                  <div className="border-r border-gray-200 py-2 px-2 text-[13px] text-center text-gray-800">{tx.discount ? tx.discount.toLocaleString() : '0'}</div>
+                  <div className="py-2 px-2 flex justify-center items-center gap-1.5">
+                    <button onClick={() => handleEdit(tx)} className="bg-[#17a2b8] hover:bg-[#138496] text-white p-[3px] rounded-[3px] transition-colors"><Edit className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => handleDelete(tx)} className="bg-[#dc3545] hover:bg-[#c82333] text-white p-[3px] rounded-[3px] transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
                 {/* Render items if withItems is true and tx has items */}
@@ -187,7 +343,8 @@ export function DayBookSummary() {
                       <thead>
                         <tr className="text-gray-500 text-left">
                           <th className="font-medium pb-1">Item</th>
-                          <th className="font-medium pb-1">Qty</th>
+                          <th className="font-medium pb-1">P.Qty</th>
+                          <th className="font-medium pb-1">S.Qty</th>
                           <th className="font-medium pb-1">Price</th>
                           <th className="font-medium pb-1">Amount</th>
                         </tr>
@@ -196,7 +353,8 @@ export function DayBookSummary() {
                         {tx.items.map((item, i) => (
                           <tr key={i}>
                             <td className="py-1 text-gray-700">{item.product ? item.product.name : 'Unknown Product'}</td>
-                            <td className="py-1 text-gray-700">{item.quantity}</td>
+                            <td className="py-1 text-gray-700">{item.quantity || 0}</td>
+                            <td className="py-1 text-gray-700">{item.freeQty || 0}</td>
                             <td className="py-1 text-gray-700">{item.price.toFixed(2)}</td>
                             <td className="py-1 text-gray-700">{item.amount.toFixed(2)}</td>
                           </tr>
@@ -206,19 +364,20 @@ export function DayBookSummary() {
                   </div>
                 )}
               </React.Fragment>
-            ))
+              );
+            })
           )}
 
           {/* Total Row */}
-          <div className="grid grid-cols-[80px_100px_1fr_120px_100px_100px_100px_80px_80px] bg-gray-50">
+          <div className="grid grid-cols-[100px_160px_1fr_110px_90px_90px_90px_80px_80px] bg-gray-50">
             <div className="border-r border-gray-200 py-2 px-2"></div>
             <div className="border-r border-gray-200 py-2 px-2"></div>
             <div className="border-r border-gray-200 py-2 px-2"></div>
             <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-center">TOTAL</div>
-            <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-right text-gray-800">{totals.debit > 0 ? totals.debit.toFixed(2) : 0}</div>
-            <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-right text-green-600">{totals.paymentIn > 0 ? totals.paymentIn.toFixed(2) : 0}</div>
-            <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-right text-red-600">{totals.paymentOut > 0 ? totals.paymentOut.toFixed(2) : 0}</div>
-            <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-right text-blue-600">{totals.discount > 0 ? totals.discount.toFixed(2) : 0}</div>
+            <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-center text-gray-800">{totals.debit > 0 ? totals.debit.toLocaleString() : '0'}</div>
+            <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-center text-gray-800">{totals.paymentIn > 0 ? totals.paymentIn.toLocaleString() : '0'}</div>
+            <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-center text-gray-800">{totals.paymentOut > 0 ? totals.paymentOut.toLocaleString() : '0'}</div>
+            <div className="border-r border-gray-200 py-2 px-2 text-[13px] font-bold text-center text-gray-800">{totals.discount > 0 ? totals.discount.toLocaleString() : '0'}</div>
             <div className="py-2 px-2"></div>
           </div>
         </div>

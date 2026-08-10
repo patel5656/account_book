@@ -52,11 +52,6 @@ export function PurchaseOrder() {
   const [paymentMode, setPaymentMode] = useState('Credit');
   const [showConvertDropdown, setShowConvertDropdown] = useState(false);
   const [dateFilter, setDateFilter] = useState('Today');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [customRangeModalOpen, setCustomRangeModalOpen] = useState(false);
-  const [tempFromDate, setTempFromDate] = useState('');
-  const [tempToDate, setTempToDate] = useState('');
   const [customerStats, setCustomerStats] = useState(null);
   const [manualDiscPercent, setManualDiscPercent] = useState('');
   const [manualDiscAmount, setManualDiscAmount] = useState('');
@@ -84,44 +79,6 @@ export function PurchaseOrder() {
       setCustomerStats(null);
     }
   }, [selectedCustomerId]);
-
-  useEffect(() => {
-    const today = new Date();
-    let start = new Date(today);
-    let end = new Date(today);
-
-    if (dateFilter === 'Today') {
-      // start and end are today
-    } else if (dateFilter === 'Yesterday') {
-      start.setDate(today.getDate() - 1);
-      end.setDate(today.getDate() - 1);
-    } else if (dateFilter === 'Last 7 Days') {
-      start.setDate(today.getDate() - 6);
-    } else if (dateFilter === 'Last 30 Days') {
-      start.setDate(today.getDate() - 29);
-    } else if (dateFilter === 'This Month') {
-      start.setDate(1);
-    } else if (dateFilter === 'Last Month') {
-      start.setMonth(today.getMonth() - 1);
-      start.setDate(1);
-      end = new Date(start);
-      end.setMonth(end.getMonth() + 1);
-      end.setDate(0);
-    } else if (dateFilter === 'Custom Range') {
-      setTempFromDate(fromDate);
-      setTempToDate(toDate);
-      setCustomRangeModalOpen(true);
-      return;
-    }
-
-    const toLocalISOString = (d) => {
-      const offset = d.getTimezoneOffset() * 60000;
-      return new Date(d.getTime() - offset).toISOString().split('T')[0];
-    };
-
-    setFromDate(toLocalISOString(start));
-    setToDate(toLocalISOString(end));
-  }, [dateFilter]);
 
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
@@ -843,19 +800,12 @@ export function PurchaseOrder() {
                  <span className="text-[12px] font-medium text-blue-500">({formatDisplayDate(invoiceDate)})</span>
                </div>
                <div className="flex flex-wrap items-center gap-2 justify-end w-full">
-                 <select 
-                   value={dateFilter}
-                   onChange={(e) => setDateFilter(e.target.value)}
-                   className="border border-gray-300 rounded-[3px] px-3 py-1 text-[13px] outline-none text-gray-800 bg-white shadow-sm min-w-[130px] cursor-pointer"
-                 >
-                   <option>Today</option>
-                   <option>Yesterday</option>
-                   <option>Last 7 Days</option>
-                   <option>Last 30 Days</option>
-                   <option>Last Month</option>
-                   <option>This Month</option>
-                   <option>Custom Range</option>
-                 </select>
+                 <input 
+                    type="date"
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                    className="border border-gray-300 rounded-[3px] px-3 py-1 text-[13px] outline-none text-gray-800 bg-white shadow-sm min-w-[130px] cursor-pointer"
+                  />
                  <button className="flex items-center gap-1 bg-[#007bff] hover:bg-[#0069d9] text-white px-3 py-1 rounded-[3px] text-[13px] font-medium transition-colors shadow-sm whitespace-nowrap">
                    <Search className="w-4 h-4" /> Search
                  </button>
@@ -1320,59 +1270,7 @@ export function PurchaseOrder() {
         <div className="flex flex-wrap items-center gap-1 text-[12px] font-bold">
           <span className="text-white">Last Invoice Total:</span>
           <span className="text-[#ffc107]">0</span>
-          {/* Custom Range Modal */}
-      {customRangeModalOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[4px] shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            
-            <div className="bg-[#007bff] px-4 py-3 flex items-center justify-between">
-              <h3 className="text-white text-[15px] font-medium">Select Date Range</h3>
-              <button onClick={() => setCustomRangeModalOpen(false)} className="text-[#dc3545] hover:text-red-700 transition-colors drop-shadow-sm">
-                <X className="w-7 h-7 font-bold" strokeWidth={4} />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div className="flex flex-col sm:flex-row gap-4 w-full">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-[13px] font-bold text-gray-800">From Date</label>
-                  <input 
-                    type="date"
-                    value={tempFromDate}
-                    onChange={(e) => setTempFromDate(e.target.value)}
-                    className="w-full border border-[#007bff] bg-[#e3f2fd] rounded-[3px] px-3 py-1.5 text-[14px] text-gray-800 outline-none focus:border-[#0056b3]"
-                  />
-                </div>
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-[13px] font-bold text-gray-800">To Date</label>
-                  <input 
-                    type="date"
-                    value={tempToDate}
-                    onChange={(e) => setTempToDate(e.target.value)}
-                    className="w-full border border-gray-300 rounded-[3px] px-3 py-1.5 text-[14px] text-gray-800 outline-none focus:border-[#007bff]"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="border-t border-gray-200 px-4 py-3 flex justify-end bg-[#f8f9fa]">
-              <button 
-                onClick={() => {
-                  setFromDate(tempFromDate);
-                  setToDate(tempToDate);
-                  setCustomRangeModalOpen(false);
-                }}
-                className="bg-[#28a745] hover:bg-[#218838] text-white px-5 py-1.5 rounded-[3px] text-[14px] font-medium transition-colors shadow-sm"
-              >
-                Search
-              </button>
-            </div>
-          </div>
         </div>
-      )}
-
-    </div>
-        
         <div className="flex items-center justify-center gap-1.5 flex-1 max-w-[400px] mx-auto">
           <button onClick={handleSave} className="flex items-center gap-1 bg-[#28a745] hover:bg-[#218838] text-white px-3 py-1.5 rounded-[3px] text-[13px] transition-colors">
             <Check className="w-4 h-4" strokeWidth={3} />

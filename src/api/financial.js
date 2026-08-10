@@ -14,11 +14,12 @@ export const getCollectionReport = async (startDate, endDate) => {
   return apiClient.get(url);
 };
 
-export const getDayBookSummary = async (dateType, date, withItems, voucherType) => {
+export const getDayBookSummary = async (dateType, fromDate, toDate, withItems, voucherType) => {
   let url = '/financial/day-book-summary';
   const params = new URLSearchParams();
   if (dateType) params.append('dateType', dateType);
-  if (date) params.append('date', date);
+  if (fromDate) params.append('fromDate', fromDate);
+  if (toDate) params.append('toDate', toDate);
   if (withItems !== undefined) params.append('withItems', withItems);
   if (voucherType) params.append('voucherType', voucherType);
   

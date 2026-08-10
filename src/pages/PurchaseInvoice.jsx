@@ -911,19 +911,12 @@ export function PurchaseInvoice() {
                  <span className="text-[12px] font-medium text-blue-500">({formatDisplayDate(invoiceDate)})</span>
                </div>
                <div className="flex flex-wrap items-center gap-2 justify-end w-full">
-                 <select 
-                   value={dateFilter}
-                   onChange={(e) => setDateFilter(e.target.value)}
-                   className="border border-gray-300 rounded-[3px] px-3 py-1 text-[13px] outline-none text-gray-800 bg-white shadow-sm min-w-[130px] cursor-pointer"
-                 >
-                   <option>Today</option>
-                   <option>Yesterday</option>
-                   <option>Last 7 Days</option>
-                   <option>Last 30 Days</option>
-                   <option>Last Month</option>
-                   <option>This Month</option>
-                   <option>Custom Range</option>
-                 </select>
+                 <input 
+                    type="date"
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                    className="border border-gray-300 rounded-[3px] px-3 py-1 text-[13px] outline-none text-gray-800 bg-white shadow-sm min-w-[130px] cursor-pointer"
+                  />
                  <button className="flex items-center gap-1 bg-[#007bff] hover:bg-[#0069d9] text-white px-3 py-1 rounded-[3px] text-[13px] font-medium transition-colors shadow-sm whitespace-nowrap">
                    <Search className="w-4 h-4" /> Search
                  </button>

@@ -129,7 +129,7 @@ export function ComplaintDetails() {
   };
 
   return (
-    <div className="bg-white min-h-[calc(100vh-60px)] flex flex-col relative">
+    <div className="bg-white min-h-[calc(100vh-60px)] flex flex-col relative w-full overflow-x-auto">
       {/* Top Teal Bar */}
       <div className="bg-[#4F46E5] px-4 py-[6px] flex justify-between items-center text-white">
         <h2 className="text-[14.5px] font-medium tracking-wide">Complain Summary</h2>

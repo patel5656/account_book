@@ -439,23 +439,44 @@ export function Sidebar({ isOpen, onClose }) {
                           setIsBalanceCorrectionModalOpen(true);
                         }
                       }}
-                      className={({ isActive }) => cn(
-                        "flex items-center justify-between text-[13px] transition-all duration-150 cursor-pointer group mx-2 px-3 py-[8px] rounded-[4px]",
-                        isActive && subitem.path !== '#'
-                          ? "bg-[#4F46E5] text-white font-medium shadow-md shadow-indigo-500/20" 
-                          : "text-gray-400 hover:text-white hover:bg-[#252733]"
-                      )}
+                      className={({ isActive }) => {
+                        const isThisModalOpen = 
+                          (subitem.name === 'Set Message Template' && isMessageTemplateModalOpen) ||
+                          (subitem.name === 'GST UQC Merge' && isGstUqcMergeModalOpen) ||
+                          (subitem.name === 'Stock Correction' && isStockCorrectionModalOpen);
+                          
+                        const anyModalOpen = isMessageTemplateModalOpen || isGstUqcMergeModalOpen || isStockCorrectionModalOpen;
+                        
+                        const isItemActive = (isActive && subitem.path !== '#' && !anyModalOpen) || isThisModalOpen;
+
+                        return cn(
+                          "flex items-center justify-between text-[13px] transition-all duration-150 cursor-pointer group mx-2 px-3 py-[8px] rounded-[4px]",
+                          isItemActive
+                            ? "bg-[#4F46E5] text-white font-medium shadow-md shadow-indigo-500/20" 
+                            : "text-gray-400 hover:text-white hover:bg-[#252733]"
+                        );
+                      }}
                     >
-                      {({ isActive }) => (
+                      {({ isActive }) => {
+                        const isThisModalOpen = 
+                          (subitem.name === 'Set Message Template' && isMessageTemplateModalOpen) ||
+                          (subitem.name === 'GST UQC Merge' && isGstUqcMergeModalOpen) ||
+                          (subitem.name === 'Stock Correction' && isStockCorrectionModalOpen);
+                          
+                        const anyModalOpen = isMessageTemplateModalOpen || isGstUqcMergeModalOpen || isStockCorrectionModalOpen;
+                        
+                        const isItemActive = (isActive && subitem.path !== '#' && !anyModalOpen) || isThisModalOpen;
+
+                        return (
                         <>
                           <div className="flex items-start gap-3 mt-0.5">
                             {subitem.icon ? (
-                              <subitem.icon className="w-4 h-4 mt-[2px]" strokeWidth={isActive ? 2.5 : 2} />
+                              <subitem.icon className="w-4 h-4 mt-[2px]" strokeWidth={isItemActive ? 2.5 : 2} />
                             ) : (
-                              <Circle className="w-4 h-4 mt-[2px]" strokeWidth={isActive ? 2.5 : 2} />
+                              <Circle className="w-4 h-4 mt-[2px]" strokeWidth={isItemActive ? 2.5 : 2} />
                             )}
                             <div className="flex flex-col">
-                              <span className={isActive ? "font-medium" : ""}>{t(`sidebar_sub.${subitem.name}`, subitem.name)}</span>
+                              <span className={isItemActive ? "font-medium" : ""}>{t(`sidebar_sub.${subitem.name}`, subitem.name)}</span>
                               {subitem.subtitle && <span className="text-[10px] opacity-70 leading-none mt-1">{subitem.subtitle}</span>}
                             </div>
                           </div>
@@ -524,7 +545,7 @@ export function Sidebar({ isOpen, onClose }) {
                               }}
                               className="z-10 cursor-pointer"
                             >
-                              {isActive ? (
+                              {isItemActive ? (
                                 <div className="w-[20px] h-[20px] flex items-center justify-center rounded-full bg-white/20">
                                   <Plus className="w-3 h-3 text-white" strokeWidth={4} />
                                 </div>
@@ -534,7 +555,8 @@ export function Sidebar({ isOpen, onClose }) {
                             </div>
                           )}
                         </>
-                      )}
+                        );
+                      }}
                     </NavLink>
                   ))}
                 </div>

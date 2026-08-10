@@ -272,11 +272,37 @@ export function BillBook() {
   });
 
   return (
-    <div className="bg-[#f8f9fa] min-h-[calc(100vh-45px)] flex flex-col p-3 relative">
+    <>
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .bill-book-container, .bill-book-container * {
+            visibility: visible;
+          }
+          .bill-book-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .print-hide {
+            display: none !important;
+          }
+          @page {
+            size: landscape;
+            margin: 10mm;
+          }
+        }
+      `}</style>
+      <div className="bg-[#f8f9fa] min-h-[calc(100vh-45px)] flex flex-col p-3 relative bill-book-container">
       <div className="bg-white rounded shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="bg-[#4F46E5] px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="bg-[#4F46E5] px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 print-hide">
           <div className="flex items-center gap-2">
              <FileText className="w-5 h-5 text-white" strokeWidth={2.5} />
              <h2 className="text-white text-[16px] font-medium tracking-wide">
@@ -286,7 +312,7 @@ export function BillBook() {
         </div>
 
         {/* Filter Bar */}
-        <div className="p-3 border-b border-gray-200 flex flex-wrap gap-4 items-end bg-[#fdfdfd]">
+        <div className="p-3 border-b border-gray-200 flex flex-wrap gap-4 items-end bg-[#fdfdfd] print-hide">
           {/* Customer Search */}
           <div className="flex-1 min-w-[200px]">
             <label className="block text-[13px] font-bold text-gray-800 mb-1">Customer Search</label>
@@ -444,14 +470,14 @@ export function BillBook() {
                     <td className="px-3 py-2.5 text-center print:hidden">
                       <div className="flex items-center justify-center gap-1.5">
                         <button 
-                          onClick={() => navigate(`/bill/${inv.invoiceNo}`)}
+                          onClick={() => navigate(inv.invoiceNo?.startsWith('POS-') ? `/bill/${inv.invoiceNo}` : `/admin/invoice-details/customer_sale?id=${inv.id}`)}
                           title="View" 
                           className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => navigate(`/admin/sales-invoice?id=${inv.id}`)}
+                          onClick={() => navigate(inv.invoiceNo?.startsWith('POS-') ? `/admin/pos?id=${inv.id}` : `/admin/sales-invoice?id=${inv.id}`)}
                           title="Edit" 
                           className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded transition-colors"
                         >
@@ -489,5 +515,6 @@ export function BillBook() {
 
       </div>
     </div>
+    </>
   );
 }

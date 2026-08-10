@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import apiClient from '../api/apiClient';
 
 export function GstUqcMergeModal({ isOpen, onClose }) {
-  const [filterType, setFilterType] = useState('not_mapped');
+  const [filterType, setFilterType] = useState('all');
   const [units, setUnits] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState('');
   const [selectedUqc, setSelectedUqc] = useState('');

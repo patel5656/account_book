@@ -14,6 +14,7 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [categoryModalEditData, setCategoryModalEditData] = useState(null);
   const [brand, setBrand] = useState('');
+  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [mrp, setMrp] = useState('');
   const [price, setPrice] = useState('');
   const [qty, setQty] = useState('');
@@ -705,16 +706,40 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-1 w-full">
+                <div className="flex flex-col gap-1 w-full relative">
                   <label className="text-[13px] font-bold text-gray-800">Brand</label>
                   <input
                     id="item_brand_input"
                     type="text"
                     placeholder="Enter Brand"
                     value={brand}
-                    onChange={e => setBrand(e.target.value)}
+                    onChange={e => {
+                      setBrand(e.target.value);
+                      setShowBrandDropdown(true);
+                    }}
+                    onFocus={() => setShowBrandDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowBrandDropdown(false), 200)}
+                    autoComplete="off"
                     className="w-full border border-gray-300 rounded-[3px] px-3 py-1.5 text-[13px] outline-none focus:border-[#4F46E5] text-gray-800 bg-white"
                   />
+                  {showBrandDropdown && (
+                    <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-50 rounded-b-[4px] max-h-[200px] overflow-y-auto custom-scrollbar mt-1">
+                      {[...new Set(products.map(p => p.brand).filter(Boolean))]
+                        .filter(b => b.toLowerCase().includes(brand.toLowerCase()))
+                        .map((b, idx) => (
+                          <div
+                            key={idx}
+                            onMouseDown={() => {
+                              setBrand(b);
+                              setShowBrandDropdown(false);
+                            }}
+                            className="px-3 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-0 text-[13px] text-gray-800 font-medium"
+                          >
+                            {b}
+                          </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1 w-full">
                   <label className="text-[13px] font-bold text-gray-800">GST / Tax (%)</label>
