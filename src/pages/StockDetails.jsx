@@ -610,8 +610,12 @@ export function StockDetails() {
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-200">
-                    <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">{viewModalData.stock} {viewModalData.baseUnit?.toLowerCase()} @ {viewModalData.price}</td>
-                    <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">{formatAmount(viewModalData.stock * viewModalData.price).replace('₹', '')}</td>
+                    <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">
+                      {viewModalData.stock} {viewModalData.baseUnit?.toLowerCase()} @ {isLoadingAvgPrice ? '...' : Number(averagePrice || viewModalData.price || 0).toFixed(2)}
+                    </td>
+                    <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">
+                      {isLoadingAvgPrice ? '...' : formatAmount(viewModalData.stock * (averagePrice || viewModalData.price || 0)).replace('₹', '')}
+                    </td>
                     <td className="py-2.5 px-3">
                       <div className={`${viewModalData.stock > 0 ? 'bg-[#28a745]' : 'bg-[#dc3545]'} text-white text-[10px] font-bold py-1 px-2 rounded-[2px] w-[90%] mx-auto shadow-sm`}>
                         {viewModalData.stock > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
