@@ -85,6 +85,7 @@ export function PurchaseOrder() {
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -111,8 +112,9 @@ export function PurchaseOrder() {
                 mfgDate: item.mfgDate || "",
                 expDate: item.expDate || "",
                 qty: item.quantity || 1,
-                primaryOpeningQty: item.primaryOpeningQty || item.quantity,
-                secOpeningQty: item.secOpeningQty || 0,
+                freeQty: item.freeQty || 0,
+                primaryOpeningQty: item.primaryOpeningQty !== null && item.primaryOpeningQty !== undefined ? item.primaryOpeningQty : 0,
+                secOpeningQty: item.secOpeningQty !== null && item.secOpeningQty !== undefined ? item.secOpeningQty : 0,
                 primaryUnit: item.product?.baseUnit || "Unit",
                 price: item.price,
                 discount1: item.discount1 || "",
@@ -230,6 +232,8 @@ export function PurchaseOrder() {
   };
 
   const handleFinalSaveWithPayment = async (paymentRows) => {
+    if (isSaving) return;
+    setIsSaving(true);
     const validItems = rows
       .filter(r => r.productId && calculateRowAmount(r).calcQty > 0)
       .map(r => {
@@ -238,6 +242,8 @@ export function PurchaseOrder() {
           productId: parseInt(r.productId),
           quantity: rowCalc.calcQty,
           freeQty: Number(r.freeQty) || 0,
+          primaryOpeningQty: Number(r.primaryOpeningQty) || 0,
+          secOpeningQty: Number(r.secOpeningQty) || 0,
           price: Number(r.price) || 0,
           discount1: Number(rowCalc.d1Amt) || 0,
           discount2: Number(rowCalc.d2Amt) || 0,
@@ -287,6 +293,8 @@ export function PurchaseOrder() {
           productId: parseInt(r.productId),
           quantity: rowCalc.calcQty,
           freeQty: Number(r.freeQty) || 0,
+          primaryOpeningQty: Number(r.primaryOpeningQty) || 0,
+          secOpeningQty: Number(r.secOpeningQty) || 0,
           price: Number(r.price) || 0,
           discount1: Number(rowCalc.d1Amt) || 0,
           discount2: Number(rowCalc.d2Amt) || 0,
@@ -482,7 +490,7 @@ export function PurchaseOrder() {
 
   const [rows, setRows] = useState([createEmptyRow()]);
 
-  const handleProductSelect = (index, productId) => {
+  const handleProductSelect = (index, productId, variant = null) => {
     const newRows = [...rows];
     if (!productId) {
       newRows[index] = createEmptyRow();
@@ -490,7 +498,8 @@ export function PurchaseOrder() {
       return;
     }
 
-    const existingIndex = newRows.findIndex((r, i) => i !== index && r.productId === parseInt(productId));
+    // We identify a unique row by productId AND variant name (if present)
+    const existingIndex = newRows.findIndex((r, i) => i !== index && r.productId === parseInt(productId) && r.variantName === (variant?.name || ""));
     if (existingIndex !== -1) {
       newRows[existingIndex] = {
         ...newRows[existingIndex],
@@ -505,14 +514,23 @@ export function PurchaseOrder() {
 
     const product = products.find(p => p.id === parseInt(productId));
     if (product) {
+      let pMRP = product.mrp || 0;
+      let pPrice = product.purchasePrice || product.price || 0;
+
+      if (variant) {
+        if (variant.mrp > 0) pMRP = variant.mrp;
+        if (variant.purchasePrice > 0) pPrice = variant.purchasePrice;
+        else if (variant.price > 0) pPrice = variant.price;
+      }
+
       newRows[index] = {
         ...newRows[index],
         productId: product.id,
         productCode: product.code || '',
         brandName: newRows[index].brandName,
-        mrp: product.mrp || 0,
-        price: product.purchasePrice || product.price || 0,
-        purchasePrice: product.purchasePrice || 0,
+        mrp: pMRP,
+        price: pPrice,
+        purchasePrice: pPrice,
         pUnit: product.baseUnit || product.purchaseUnit || '',
         sUnit: product.salesUnit || '',
         hsn: product.hsnCode || '',
@@ -520,7 +538,8 @@ export function PurchaseOrder() {
         batchNo: product.batchNo || '',
         primaryOpeningQty: 1,
         secOpeningQty: 0,
-        qty: 1
+        qty: 1,
+        variantName: variant?.name || ""
       };
       setRows(newRows);
       fetchAvailableBatches(product.id, index);
@@ -537,6 +556,60 @@ export function PurchaseOrder() {
   const updateRow = (index, field, value) => {
     const newRows = [...rows];
     newRows[index][field] = value;
+
+    // Slab Pricing Logic
+    if (['qty', 'primaryOpeningQty', 'secOpeningQty'].includes(field) && newRows[index].productId) {
+      const product = products.find(p => p.id === parseInt(newRows[index].productId));
+      if (product) {
+        const rate = product.conversionRate || 1;
+        const priQty = settings?.primaryOpeningQty ? (Number(newRows[index].primaryOpeningQty) || 0) : 0;
+        const secQty = settings?.secOpeningQty ? (Number(newRows[index].secOpeningQty) || 0) : 0;
+        
+        let slabCheckQty = 0;
+        if (settings?.primaryOpeningQty && newRows[index].primaryOpeningQty !== undefined && newRows[index].primaryOpeningQty !== "") {
+          slabCheckQty = Number(newRows[index].primaryOpeningQty) || 0;
+        } else {
+          slabCheckQty = Number(newRows[index].qty) || 0;
+        }
+
+        let slabPrice = null;
+        let qtySlabs = [];
+        try {
+          if (typeof product.qtySlabs === 'string') qtySlabs = JSON.parse(product.qtySlabs);
+          else if (Array.isArray(product.qtySlabs)) qtySlabs = product.qtySlabs;
+        } catch(e) {}
+
+        if (qtySlabs.length > 0) {
+          for (const slab of qtySlabs) {
+            const min = Number(slab.minQty) || 0;
+            const max = Number(slab.maxQty) || Infinity;
+            if (slabCheckQty >= min && slabCheckQty <= max && slab.price) {
+              slabPrice = Number(slab.price);
+              break;
+            }
+          }
+        }
+
+        if (slabPrice !== null) {
+          newRows[index].price = slabPrice;
+        } else {
+          let pPrice = product.purchasePrice || product.price || 0;
+          if (newRows[index].variantName) {
+            let subItemsList = [];
+            try {
+              subItemsList = typeof product.subItems === 'string' ? JSON.parse(product.subItems) : (product.subItems || []);
+            } catch (e) {}
+            const variant = subItemsList.find(v => (v.name || [v.size, v.color].filter(Boolean).join(' - ')) === newRows[index].variantName);
+            if (variant) {
+               if (variant.purchasePrice > 0) pPrice = variant.purchasePrice;
+               else if (variant.price > 0) pPrice = variant.price;
+            }
+          }
+          newRows[index].price = pPrice;
+        }
+      }
+    }
+
     setRows(newRows);
   };
 
@@ -691,7 +764,7 @@ export function PurchaseOrder() {
               <RefreshCw className="w-4 h-4 text-white" strokeWidth={3} />
             </button>
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate(-1)}
               className="bg-[#dc3545] p-1 rounded-sm shadow-sm hover:bg-[#c82333] transition-colors"
             >
               <X className="w-4 h-4 text-white font-bold" strokeWidth={4} />
@@ -923,7 +996,8 @@ export function PurchaseOrder() {
                             <ProductSelectDropdown 
                               products={row.brandName ? products.filter(p => p.brand === row.brandName) : products}
                               value={row.productId}
-                              onChange={(val) => handleProductSelect(idx, val)}
+                              selectedVariant={{ name: row.variantName }}
+                              onChange={(val, variant) => handleProductSelect(idx, val, variant)}
                               onEdit={(product) => { setEditingProduct(product); setIsProductModalOpen(true); }}
                               onDelete={handleDeleteProduct}
                               showPurchasePrice={settings.showPurchasePrice}
@@ -1292,7 +1366,14 @@ export function PurchaseOrder() {
           </div>
 
           <button 
-            onClick={() => window.print()}
+            type="button"
+            onClick={() => {
+              if (searchInvoiceNo) {
+                window.open(`/bill/${searchInvoiceNo}`, '_blank');
+              } else {
+                alert('Please save the invoice first to print it.');
+              }
+            }}
             className="flex items-center gap-1 bg-[#4F46E5] hover:bg-[#4338ca] text-white px-3 py-1.5 rounded-[3px] text-[13px] transition-colors"
           >
             <Printer className="w-4 h-4" strokeWidth={3} />
@@ -1300,7 +1381,7 @@ export function PurchaseOrder() {
           </button>
 
           <button 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-1 bg-[#dc3545] hover:bg-[#c82333] text-white px-3 py-1.5 rounded-[3px] text-[13px] transition-colors"
           >
             <X className="w-4 h-4" strokeWidth={3} />

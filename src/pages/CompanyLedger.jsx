@@ -111,6 +111,7 @@ export function CompanyLedger() {
       if (res.data.success) {
         setEntries(res.data.data);
         setSelectedCompany(res.data.customer);
+        setCompanies(prev => prev.map(c => c.id === res.data.customer.id ? { ...c, balance: res.data.customer.balance } : c));
       }
     } catch (err) {
       console.error('Error fetching ledger', err);

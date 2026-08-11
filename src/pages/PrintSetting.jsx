@@ -1397,6 +1397,7 @@ export function PrintSetting() {
                                         parsedItems={previewInvoice?.items?.map(i => ({
                                             name: i.product?.name || i.name || 'Unknown',
                                             quantity: i.quantity || 1,
+                                            freeQty: i.freeQty || 0,
                                             price: i.price || 0,
                                             discount: i.discount1 || 0,
                                             hsn: i.hsnCode || '-',

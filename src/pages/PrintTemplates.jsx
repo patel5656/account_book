@@ -90,6 +90,7 @@ export const Template1 = ({
               <th className="p-1 border-r border-gray-400 text-left">Item Name</th>
               <th className="p-1 border-r border-gray-400">HSN/SAC</th>
               <th className="p-1 border-r border-gray-400">Qty</th>
+              <th className="p-1 border-r border-gray-400">Free</th>
               <th className="p-1 border-r border-gray-400">MRP</th>
               <th className="p-1 border-r border-gray-400">Rate</th>
               <th className="p-1 border-r border-gray-400">Dis.</th>
@@ -110,6 +111,7 @@ export const Template1 = ({
                   </td>
                   <td className="p-1 border-r border-gray-400 pt-1">{item.hsn}</td>
                   <td className="p-1 border-r border-gray-400 pt-1">{item.quantity}</td>
+                  <td className="p-1 border-r border-gray-400 pt-1">{item.freeQty || 0}</td>
                   <td className="p-1 border-r border-gray-400 pt-1">₹{parseFloat(item.price || 0).toFixed(2)}</td>
                   <td className="p-1 border-r border-gray-400 pt-1">₹{parseFloat(item.price || 0).toFixed(2)}</td>
                   <td className="p-1 border-r border-gray-400 pt-1">{item.discount || 0}</td>
@@ -121,7 +123,7 @@ export const Template1 = ({
               ))
             ) : (
                <tr className="border-b border-gray-200">
-                 <td colSpan={11} className="p-4 text-center text-gray-400 italic">No items added yet</td>
+                 <td colSpan={12} className="p-4 text-center text-gray-400 italic">No items added yet</td>
                </tr>
             )}
             {/* Total Row */}
@@ -130,6 +132,7 @@ export const Template1 = ({
               <td className="p-1 border-r border-gray-400 text-left">Total</td>
               <td className="p-1 border-r border-gray-400"></td>
               <td className="p-1 border-r border-gray-400">{totalQty || '0.00'}</td>
+              <td className="p-1 border-r border-gray-400"></td>
               <td className="p-1 border-r border-gray-400"></td>
               <td className="p-1 border-r border-gray-400"></td>
               <td className="p-1 border-r border-gray-400"></td>

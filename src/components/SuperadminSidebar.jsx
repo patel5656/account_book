@@ -25,7 +25,7 @@ export function SuperadminSidebar({ isOpen, onClose }) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredMenuItems = menuItems.filter(item => 
+  const filteredMenuItems = menuItems.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -56,12 +56,12 @@ export function SuperadminSidebar({ isOpen, onClose }) {
             </svg>
           </div>
           <div className="flex flex-col gap-1">
-             <span className="leading-[1.1] tracking-wide font-medium flex flex-col">
-               <span>Swayam</span>
-               <span>Bill <span className="text-[#3b82f6]">Book</span></span>
-             </span>
+            <span className="leading-[1.1] tracking-wide font-medium flex flex-col">
+              <span>Swayam</span>
+              <span>Bill <span className="text-[#3b82f6]">Book</span></span>
+            </span>
 
-             <span className="text-[10px] text-slate-300 leading-none">The Digital Accounting Book</span>
+            <span className="text-[10px] text-slate-300 leading-none">The Digital Accounting Book</span>
           </div>
         </h1>
       </div>

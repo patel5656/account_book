@@ -173,6 +173,7 @@ export function CustomerLedger() {
       if (res.data.success) {
         setEntries(res.data.data);
         setSelectedCustomer(res.data.customer);
+        setCustomers(prev => prev.map(c => c.id === res.data.customer.id ? { ...c, balance: res.data.customer.balance } : c));
       }
     } catch (err) {
       console.error('Error fetching ledger', err);

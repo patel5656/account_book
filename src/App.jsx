@@ -112,21 +112,21 @@ function App() {
           <Route path="/register" element={<Register />} />
           {/* Public Bill Page - no login required */}
           <Route path="/bill/:invoiceNo" element={<PublicBillPage />} />
-          
+
           {/* Superadmin Routes */}
           <Route path="/superadmin/*" element={
             <ProtectedRoute>
               <SuperadminLayout>
-              <Routes>
-                <Route path="/" element={<Navigate to="dashboard" />} />
-                <Route path="dashboard" element={<SuperadminDashboard />} />
-                <Route path="companies" element={<CompanyManagement />} />
-                <Route path="subscriptions" element={<SubscriptionManagement />} />
-                <Route path="support" element={<SuperadminSupport />} />
-                <Route path="settings" element={<GlobalSettings />} />
-                <Route path="*" element={<Navigate to="dashboard" />} />
-              </Routes>
-            </SuperadminLayout>
+                <Routes>
+                  <Route path="/" element={<Navigate to="dashboard" />} />
+                  <Route path="dashboard" element={<SuperadminDashboard />} />
+                  <Route path="companies" element={<CompanyManagement />} />
+                  <Route path="subscriptions" element={<SubscriptionManagement />} />
+                  <Route path="support" element={<SuperadminSupport />} />
+                  <Route path="settings" element={<GlobalSettings />} />
+                  <Route path="*" element={<Navigate to="dashboard" />} />
+                </Routes>
+              </SuperadminLayout>
             </ProtectedRoute>
           } />
 
@@ -134,115 +134,115 @@ function App() {
           <Route path="/*" element={
             <ProtectedRoute>
               <DashboardLayout>
-              <Routes>
-                <Route path="/" element={<Navigate to="/login" />} />
-            <Route path="/admin/registration" element={<FirmRegistration />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/admin/invoice-details/customer_sale" element={<SalesInvoiceSummary />} />
-            <Route path="/admin/invoice-details/customer_sale_order" element={<SalesInvoiceSummary />} />
-            <Route path="/admin/invoice-details/customer_challan_invoice" element={<SalesInvoiceSummary />} />
-            <Route path="/admin/sales-order-invoice" element={<SalesInvoice />} />
-            <Route path="/admin/customer-invoice-creation" element={<SalesInvoice />} />
-            <Route path="/admin/customer-challan-creation" element={<SalesInvoice />} />
-            <Route path="/admin/sales-invoice" element={<SalesInvoice />} />
-            <Route path="/admin/sales-return-invoice" element={<SalesInvoice />} />
-            <Route path="/admin/quotation-invoice" element={<SalesInvoice />} />
-            <Route path="/admin/create_invoices/company_purchase" element={<PurchaseInvoice />} />
-            <Route path="/admin/create_invoices/company_purchase_return" element={<PurchaseInvoice />} />
-            <Route path="/admin/create_invoices/company_purchase_order" element={<PurchaseOrder />} />
-            <Route path="/admin/invoice-details/company_purchase_order" element={<Purchase />} />
-            <Route path="/admin/stock-details" element={<StockDetails />} />
-            <Route path="/admin/bank-ledger" element={<BankLedger />} />
-            <Route path="/admin/allbookbalance" element={<AllBookBalance />} />
-            <Route path="/admin/expenses-ledger/expense_ledger" element={<ExpenseLedgerInput />} />
-            <Route path="/admin/expenses_report/expense_ledger" element={<ExpenseLedgerReport />} />
-            <Route path="/admin/incomes-ledger/income_ledger" element={<IncomeLedgerInput />} />
-            <Route path="/admin/cashbook-ledger/payment_ledger" element={<PaymentLedger />} />
-            <Route path="/admin/party-ledger/customer_payment" element={<CustomerLedger />} />
-            <Route path="/admin/party_outstanding/customer_outstanding" element={<CustomerOutstanding />} />
-            <Route path="/admin/party-ledger/company_payment" element={<CompanyLedger />} />
-            <Route path="/admin/party_outstanding/company_outstanding" element={<CompanyOutstanding />} />
-            <Route path="/admin/employee_attendance" element={<EmployeeAttendance />} />
-            <Route path="/admin/sale_summary" element={<SaleSummary />} />
-            <Route path="/admin/purchase_summary" element={<PurchaseSummary />} />
-            <Route path="/admin/cash_bank_summary" element={<CashBankSummary />} />
-            <Route path="/admin/day_book_summary" element={<DayBookSummary />} />
-            <Route path="/admin/expiry_report" element={<ExpiryReport />} />
-            <Route path="/admin/order_list" element={<OrderList />} />
-            <Route path="/admin/inventory-summary/brandwise-sale" element={<BrandwiseSaleSummary />} />
-            <Route path="/admin/inventory-summary/brandwise-purchase" element={<BrandwisePurchaseSummary />} />
-            <Route path="/admin/inventory-summary/categorywise-sale" element={<CategorywiseSaleSummary />} />
-            <Route path="/admin/inventory-summary/categorywise-purchase" element={<CategorywisePurchaseSummary />} />
-            <Route path="/admin/inventory-summary/itemwise-sale" element={<ItemwiseSaleSummary />} />
-            <Route path="/admin/inventory-summary/itemwise-purchase" element={<ItemwisePurchaseSummary />} />
-            <Route path="/admin/inventory-summary/employeewise-sale" element={<EmployeewiseSaleSummary />} />
-            <Route path="/admin/inventory-summary/invoices-report" element={<InvoicesReport />} />
-            <Route path="/admin/bank_details" element={<BankDetails />} />
-            <Route path="/admin/company_master" element={<CompanyMaster />} />
-            <Route path="/admin/customer_master" element={<CustomerMaster />} />
-            <Route path="/admin/category_master" element={<CategoryMaster />} />
-            <Route path="/admin/employee_master" element={<EmployeeMaster />} />
-            <Route path="/admin/expense_master" element={<ExpenseMaster />} />
-            <Route path="/admin/income_master" element={<IncomeMaster />} />
-            <Route path="/admin/payment_master" element={<PaymentMaster />} />
-            <Route path="/admin/item_master" element={<ItemMaster />} />
-            <Route path="/admin/offer_management" element={<OfferManagement />} />
-            <Route path="/admin/product_master" element={<StockDetails />} />
-            <Route path="/admin/unit_catalog_master" element={<UnitCatalogMaster />} />
-            <Route path="/admin/bom_master" element={<BomMaster />} />
-            <Route path="/admin/voucher_master" element={<VoucherMaster />} />
-            <Route path="/admin/purchase" element={<Purchase />} />
-            <Route path="/admin/purchase_return" element={<PurchaseReturn />} />
-            <Route path="/admin/godown_transfer" element={<GodownTransfer />} />
-            <Route path="/admin/pos" element={<PosBilling />} />
-            <Route path="/admin/branch_master" element={<BranchMaster />} />
-            <Route path="/admin/warehouse_master" element={<WarehouseMaster />} />
-            <Route path="/admin/location_master" element={<LocationMaster />} />
-            <Route path="/admin/sales" element={<SalesInvoiceSummary />} />
-            <Route path="/admin/sales_return" element={<SalesReturnSummary />} />
-            <Route path="/admin/quotation" element={<Quotation />} />
-            <Route path="/admin/stock_adjustment" element={<StockAdjustment />} />
-            <Route path="/admin/stock-adjustment-invoice" element={<StockAdjustmentForm />} />
-            <Route path="/admin/stock_inventory" element={<StockInventory />} />
-            <Route path="/admin/employee_ledger" element={<EmployeeLedger />} />
-            <Route path="/admin/final-accounts/trading-account" element={<TradingAccount />} />
-            <Route path="/admin/final-accounts/profit-loss" element={<ProfitLossAccount />} />
-            <Route path="/admin/final-accounts/balance-sheet" element={<BalanceSheet />} />
-            <Route path="/admin/final-accounts/tcs-report" element={<TcsReport />} />
-            <Route path="/admin/final-accounts/rojmel" element={<DailyCashBook />} />
-            <Route path="/admin/gstr-summary/gstr-1" element={<Gstr1Summary />} />
-            <Route path="/admin/gstr-summary/gstr-2" element={<Gstr2Summary />} />
-            <Route path="/admin/gstr-summary/gstr-3b" element={<Gstr3bSummary />} />
-            <Route path="/admin/gstr-summary/sale-summary" element={<GstrSaleSummary />} />
-            <Route path="/admin/gstr-summary/sale-return" element={<GstrSaleReturn />} />
-            <Route path="/admin/gstr-summary/purchase-summary" element={<GstrPurchaseSummary />} />
-            <Route path="/admin/gstr-summary/purchase-return" element={<GstrPurchaseReturn />} />
-            <Route path="/admin/gstr-summary/gst-wise" element={<GstWiseSummary />} />
-            <Route path="/admin/gstr-summary/hsn-wise" element={<HsnWiseSummary />} />
-            <Route path="/admin/complaint_details" element={<ComplaintDetails />} />
-            <Route path="/tools/complaint" element={<ComplaintDetails />} />
-            <Route path="/admin/service_reminder" element={<ServiceReminder />} />
-            <Route path="/tools/service-reminder" element={<ServiceReminder />} />
-            <Route path="/admin/barcode" element={<BarcodePage />} />
-            <Route path="/tools/barcode" element={<BarcodePage />} />
-            <Route path="/admin/print-setting" element={<PrintSetting />} />
-            <Route path="/admin/hsn_error" element={<HsnGstError />} />
-            <Route path="/tools/hsn-gst-error" element={<HsnGstError />} />
-            <Route path="/admin/stock-price-update" element={<StockPriceUpdate />} />
-            <Route path="/tools/stock-price-update" element={<StockPriceUpdate />} />
-            <Route path="/admin/items_quantity_report/:id" element={<ItemQuantityReport />} />
-            <Route path="/admin/view_deleted_entry" element={<ViewDeletedEntry />} />
-            <Route path="/admin/notification-permission" element={<NotificationPermission />} />
-            <Route path="/tools/notification-permission" element={<NotificationPermission />} />
-            <Route path="/tools/hard-refresh" element={<HardRefreshPage />} />
-            <Route path="/admin/audit-logs" element={<AuditLogs />} />
-            <Route path="/admin/bill-book" element={<BillBook />} />
-            <Route path="/admin/bank_statement_import" element={<BankStatementImport />} />
-            <Route path="/admin/view_user" element={<ViewUser />} />
-            <Route path="/admin/profile" element={<ProfilePage />} />
-                <Route path="*" element={<Navigate to="/dashboard" />} />
-              </Routes>
-            </DashboardLayout>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/login" />} />
+                  <Route path="/admin/registration" element={<FirmRegistration />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/admin/invoice-details/customer_sale" element={<SalesInvoiceSummary />} />
+                  <Route path="/admin/invoice-details/customer_sale_order" element={<SalesInvoiceSummary />} />
+                  <Route path="/admin/invoice-details/customer_challan_invoice" element={<SalesInvoiceSummary />} />
+                  <Route path="/admin/sales-order-invoice" element={<SalesInvoice />} />
+                  <Route path="/admin/customer-invoice-creation" element={<SalesInvoice />} />
+                  <Route path="/admin/customer-challan-creation" element={<SalesInvoice />} />
+                  <Route path="/admin/sales-invoice" element={<SalesInvoice />} />
+                  <Route path="/admin/sales-return-invoice" element={<SalesInvoice />} />
+                  <Route path="/admin/quotation-invoice" element={<SalesInvoice />} />
+                  <Route path="/admin/create_invoices/company_purchase" element={<PurchaseInvoice />} />
+                  <Route path="/admin/create_invoices/company_purchase_return" element={<PurchaseInvoice />} />
+                  <Route path="/admin/create_invoices/company_purchase_order" element={<PurchaseOrder />} />
+                  <Route path="/admin/invoice-details/company_purchase_order" element={<Purchase />} />
+                  <Route path="/admin/stock-details" element={<StockDetails />} />
+                  <Route path="/admin/bank-ledger" element={<BankLedger />} />
+                  <Route path="/admin/allbookbalance" element={<AllBookBalance />} />
+                  <Route path="/admin/expenses-ledger/expense_ledger" element={<ExpenseLedgerInput />} />
+                  <Route path="/admin/expenses_report/expense_ledger" element={<ExpenseLedgerReport />} />
+                  <Route path="/admin/incomes-ledger/income_ledger" element={<IncomeLedgerInput />} />
+                  <Route path="/admin/cashbook-ledger/payment_ledger" element={<PaymentLedger />} />
+                  <Route path="/admin/party-ledger/customer_payment" element={<CustomerLedger />} />
+                  <Route path="/admin/party_outstanding/customer_outstanding" element={<CustomerOutstanding />} />
+                  <Route path="/admin/party-ledger/company_payment" element={<CompanyLedger />} />
+                  <Route path="/admin/party_outstanding/company_outstanding" element={<CompanyOutstanding />} />
+                  <Route path="/admin/employee_attendance" element={<EmployeeAttendance />} />
+                  <Route path="/admin/sale_summary" element={<SaleSummary />} />
+                  <Route path="/admin/purchase_summary" element={<PurchaseSummary />} />
+                  <Route path="/admin/cash_bank_summary" element={<CashBankSummary />} />
+                  <Route path="/admin/day_book_summary" element={<DayBookSummary />} />
+                  <Route path="/admin/expiry_report" element={<ExpiryReport />} />
+                  <Route path="/admin/order_list" element={<OrderList />} />
+                  <Route path="/admin/inventory-summary/brandwise-sale" element={<BrandwiseSaleSummary />} />
+                  <Route path="/admin/inventory-summary/brandwise-purchase" element={<BrandwisePurchaseSummary />} />
+                  <Route path="/admin/inventory-summary/categorywise-sale" element={<CategorywiseSaleSummary />} />
+                  <Route path="/admin/inventory-summary/categorywise-purchase" element={<CategorywisePurchaseSummary />} />
+                  <Route path="/admin/inventory-summary/itemwise-sale" element={<ItemwiseSaleSummary />} />
+                  <Route path="/admin/inventory-summary/itemwise-purchase" element={<ItemwisePurchaseSummary />} />
+                  <Route path="/admin/inventory-summary/employeewise-sale" element={<EmployeewiseSaleSummary />} />
+                  <Route path="/admin/inventory-summary/invoices-report" element={<InvoicesReport />} />
+                  <Route path="/admin/bank_details" element={<BankDetails />} />
+                  <Route path="/admin/company_master" element={<CompanyMaster />} />
+                  <Route path="/admin/customer_master" element={<CustomerMaster />} />
+                  <Route path="/admin/category_master" element={<CategoryMaster />} />
+                  <Route path="/admin/employee_master" element={<EmployeeMaster />} />
+                  <Route path="/admin/expense_master" element={<ExpenseMaster />} />
+                  <Route path="/admin/income_master" element={<IncomeMaster />} />
+                  <Route path="/admin/payment_master" element={<PaymentMaster />} />
+                  <Route path="/admin/item_master" element={<ItemMaster />} />
+                  <Route path="/admin/offer_management" element={<OfferManagement />} />
+                  <Route path="/admin/product_master" element={<StockDetails />} />
+                  <Route path="/admin/unit_catalog_master" element={<UnitCatalogMaster />} />
+                  <Route path="/admin/bom_master" element={<BomMaster />} />
+                  <Route path="/admin/voucher_master" element={<VoucherMaster />} />
+                  <Route path="/admin/purchase" element={<Purchase />} />
+                  <Route path="/admin/purchase_return" element={<PurchaseReturn />} />
+                  <Route path="/admin/godown_transfer" element={<GodownTransfer />} />
+                  <Route path="/admin/pos" element={<PosBilling />} />
+                  <Route path="/admin/branch_master" element={<BranchMaster />} />
+                  <Route path="/admin/warehouse_master" element={<WarehouseMaster />} />
+                  <Route path="/admin/location_master" element={<LocationMaster />} />
+                  <Route path="/admin/sales" element={<SalesInvoiceSummary />} />
+                  <Route path="/admin/sales_return" element={<SalesReturnSummary />} />
+                  <Route path="/admin/quotation" element={<Quotation />} />
+                  <Route path="/admin/stock_adjustment" element={<StockAdjustment />} />
+                  <Route path="/admin/stock-adjustment-invoice" element={<StockAdjustmentForm />} />
+                  <Route path="/admin/stock_inventory" element={<StockInventory />} />
+                  <Route path="/admin/employee_ledger" element={<EmployeeLedger />} />
+                  <Route path="/admin/final-accounts/trading-account" element={<TradingAccount />} />
+                  <Route path="/admin/final-accounts/profit-loss" element={<ProfitLossAccount />} />
+                  <Route path="/admin/final-accounts/balance-sheet" element={<BalanceSheet />} />
+                  <Route path="/admin/final-accounts/tcs-report" element={<TcsReport />} />
+                  <Route path="/admin/final-accounts/rojmel" element={<DailyCashBook />} />
+                  <Route path="/admin/gstr-summary/gstr-1" element={<Gstr1Summary />} />
+                  <Route path="/admin/gstr-summary/gstr-2" element={<Gstr2Summary />} />
+                  <Route path="/admin/gstr-summary/gstr-3b" element={<Gstr3bSummary />} />
+                  <Route path="/admin/gstr-summary/sale-summary" element={<GstrSaleSummary />} />
+                  <Route path="/admin/gstr-summary/sale-return" element={<GstrSaleReturn />} />
+                  <Route path="/admin/gstr-summary/purchase-summary" element={<GstrPurchaseSummary />} />
+                  <Route path="/admin/gstr-summary/purchase-return" element={<GstrPurchaseReturn />} />
+                  <Route path="/admin/gstr-summary/gst-wise" element={<GstWiseSummary />} />
+                  <Route path="/admin/gstr-summary/hsn-wise" element={<HsnWiseSummary />} />
+                  <Route path="/admin/complaint_details" element={<ComplaintDetails />} />
+                  <Route path="/tools/complaint" element={<ComplaintDetails />} />
+                  <Route path="/admin/service_reminder" element={<ServiceReminder />} />
+                  <Route path="/tools/service-reminder" element={<ServiceReminder />} />
+                  <Route path="/admin/barcode" element={<BarcodePage />} />
+                  <Route path="/tools/barcode" element={<BarcodePage />} />
+                  <Route path="/admin/print-setting" element={<PrintSetting />} />
+                  <Route path="/admin/hsn_error" element={<HsnGstError />} />
+                  <Route path="/tools/hsn-gst-error" element={<HsnGstError />} />
+                  <Route path="/admin/stock-price-update" element={<StockPriceUpdate />} />
+                  <Route path="/tools/stock-price-update" element={<StockPriceUpdate />} />
+                  <Route path="/admin/items_quantity_report/:id" element={<ItemQuantityReport />} />
+                  <Route path="/admin/view_deleted_entry" element={<ViewDeletedEntry />} />
+                  <Route path="/admin/notification-permission" element={<NotificationPermission />} />
+                  <Route path="/tools/notification-permission" element={<NotificationPermission />} />
+                  <Route path="/tools/hard-refresh" element={<HardRefreshPage />} />
+                  <Route path="/admin/audit-logs" element={<AuditLogs />} />
+                  <Route path="/admin/bill-book" element={<BillBook />} />
+                  <Route path="/admin/bank_statement_import" element={<BankStatementImport />} />
+                  <Route path="/admin/view_user" element={<ViewUser />} />
+                  <Route path="/admin/profile" element={<ProfilePage />} />
+                  <Route path="*" element={<Navigate to="/dashboard" />} />
+                </Routes>
+              </DashboardLayout>
             </ProtectedRoute>
           } />
         </Routes>

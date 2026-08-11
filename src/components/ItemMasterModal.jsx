@@ -59,7 +59,7 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
   const [isSizeDropdownOpen, setIsSizeDropdownOpen] = useState(false);
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
 
-  const defaultSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '5', '6', '7', '8', '9', '10', '11', '12'];
+  const defaultSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', ...Array.from({ length: 40 }, (_, i) => String(i + 1))];
   const defaultColors = [
     { name: 'Black', hex: '#000000' },
     { name: 'White', hex: '#FFFFFF' },

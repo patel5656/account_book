@@ -1,21 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
+import { Template1 } from './PrintTemplates';
+import { Printer } from 'lucide-react';
 
 export function PublicBillPage() {
   const { invoiceNo } = useParams();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [allPrintSettings, setAllPrintSettings] = useState(null);
+  const printRef = useRef(null);
 
   useEffect(() => {
-    const fetchBill = async () => {
+    const fetchData = async () => {
       try {
-        const res = await apiClient.get(`/public/bill/${invoiceNo}`);
-        if (res.data.success) {
-          setInvoice(res.data.data);
+        setLoading(true);
+        const billRes = await apiClient.get(`/public/bill/${invoiceNo}`);
+        if (billRes.data.success) {
+          setInvoice(billRes.data.data);
         } else {
-          setError(res.data.message || 'Bill not found');
+          setError(billRes.data.message || 'Bill not found');
+          setLoading(false);
+          return;
+        }
+
+        try {
+          // Attempt to fetch settings, this might fail if not authenticated, but we'll try
+          const settingsRes = await apiClient.get('/settings');
+          if (settingsRes.data?.success && settingsRes.data?.data?.printSettings) {
+            setAllPrintSettings(settingsRes.data.data.printSettings);
+          }
+        } catch (setErr) {
+          console.warn("Could not fetch custom print settings, using defaults.", setErr);
         }
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to load bill');
@@ -23,367 +40,178 @@ export function PublicBillPage() {
         setLoading(false);
       }
     };
-    fetchBill();
+    fetchData();
   }, [invoiceNo]);
 
   if (loading) {
     return (
-      <div style={styles.centeredPage}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={styles.spinner}></div>
-          <p style={{ color: '#6b7280', fontFamily: 'sans-serif', marginTop: 12, fontSize: 14 }}>Loading your bill...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-500 mt-3 text-sm">Loading your invoice...</p>
         </div>
-        <style>{`
-          @keyframes spin { to { transform: rotate(360deg); } }
-          @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        `}</style>
       </div>
     );
   }
 
   if (error || !invoice) {
     return (
-      <div style={styles.centeredPage}>
-        <div style={{ textAlign: 'center', padding: '32px 24px' }}>
-          <div style={{ fontSize: 52, marginBottom: 12 }}>❌</div>
-          <h2 style={{ color: '#dc2626', marginBottom: 8, fontSize: 20, fontFamily: 'sans-serif' }}>{error || 'Bill Not Found'}</h2>
-          <p style={{ color: '#6b7280', fontSize: 13, fontFamily: 'sans-serif', wordBreak: 'break-all' }}>Invoice: {invoiceNo}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <div className="text-center bg-white p-8 rounded-lg shadow-md max-w-sm w-full">
+          <div className="text-5xl mb-3">❌</div>
+          <h2 className="text-red-600 mb-2 text-xl font-bold">{error || 'Bill Not Found'}</h2>
+          <p className="text-gray-500 text-sm break-all">Invoice: {invoiceNo}</p>
         </div>
-        <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       </div>
     );
   }
 
+  // Determine transaction type based on invoice number prefix or data
+  // Default to Income Transaction for sales
+  let transactionType2 = 'Income Transaction';
+  if (invoiceNo.startsWith('PO') || invoiceNo.startsWith('PI')) {
+      transactionType2 = 'Expense Transaction';
+  }
+
+  const currentConfig = allPrintSettings?.[transactionType2] || {};
+  
+  // Default settings if not configured
+  const headerSettings = currentConfig.headerSettings || {
+      showLogo: true, showMobileNumber: true, showEmail: true, showQrCode: true,
+      labelGstin: 'GSTIN', labelInvoiceNumber: 'Invoice Number', labelDate: 'Date',
+      labelCustomer: 'Customer', labelAddress: 'Address', labelPartyContact: 'Contact Number',
+      labelPartyPan: 'Pan Number', labelPartyGstin: 'GSTIN',
+      partyContactNumber: true, partyPanNumber: true, partyGstin: true,
+      customFields: [], showMrp: true, showPrimaryQty: true, showSecondaryQty: true,
+      showDiscount1: true, showDiscount2: true, showDiscount: true, showUnit: true,
+      showCompanyProductCode: true, showBatchNo: true, showHsn: true, showPurchasePrice: true
+  };
+  
+  const tableSettings = currentConfig.tableSettings || {
+      thItemName: '', thHsnSac: '', showThHsnSac: true, thGst: '', showThGst: true,
+      thQty: '', showThQty: true, thRate: '', showThRate: true, thDiscount: '', showThDiscount: true,
+      thTaxableValue: '', showThTaxableValue: true, thTotalAmount: '', showThTotalAmount: true,
+      tlIgst: '', showTlIgst: true, tlCgst: '', showTlCgst: true, tlSgst: '', showTlSgst: true,
+      tlCess: '', showTlCess: true, tlTcs: '', showTlTcs: true, tlRoundOff: '', showTlRoundOff: true
+  };
+  
+  const footerSettings = currentConfig.footerSettings || {
+      showQrCode: true, showHsnSummary: false, showCurrentOutstanding: false,
+      outstandingPosition: 'After this Transaction', showPaymentDetails: true,
+      labelTermsAndConditions: 'Terms And Conditions', labelThankYouNote: 'Thank You Note'
+  };
+  
+  const customization = currentConfig.customization || {
+      headerCompanyNameB: true, headerCompanyNameU: true, headerCompanyNameFontSize: '24',
+      headerCompanyAddressFontSize: '13', headerLabelsFontSize: '11', headerContentsFontSize: '11',
+      tableHeadingsFontSize: '11', tableContentsFontSize: '11', tableFooterFontSize: '11',
+      pageMargin: '0', primaryColor: '#4d1685'
+  };
+
   const company = invoice.company || {};
   const customer = invoice.customer || {};
   const items = invoice.items || [];
-  const subtotal = items.reduce((acc, i) => acc + (Number(i.amount) || 0), 0);
+  
   const invoiceDate = invoice.date
-    ? new Date(invoice.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? new Date(invoice.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
     : '-';
-  const invoiceTime = invoice.date
-    ? new Date(invoice.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-    : '';
+
+  // Map to previewInvoice format expected by Template1
+  const mappedPreviewInvoice = {
+      companyName: company.name || '',
+      companyAddress: company.address || '',
+      companyPhone: company.phone || company.mobile || '',
+      companyEmail: company.email || '',
+      companyGst: company.gstin || company.gst || '',
+      companyLogo: company.logoUrl || company.logo || '',
+      
+      customerName: customer.name || '',
+      customerAddress: customer.address || '',
+      customerPhone: customer.phone || customer.mobile || '',
+      customerEmail: customer.email || '',
+      customerGst: customer.gstin || customer.gst || '',
+      customerPan: customer.pan || '',
+      
+      invoiceNumber: invoice.invoiceNo || '',
+      invoiceDate: invoiceDate,
+      deliveryChallanNo: invoice.deliveryChallanNo || '',
+      deliveryDate: invoice.deliveryDate ? new Date(invoice.deliveryDate).toLocaleDateString() : '',
+      
+      ackNo: invoice.ackNo || '',
+      ackDate: invoice.ackDate || '',
+      irn: invoice.irn || ''
+  };
+
+  const parsedItems = items.map(i => ({
+      name: i.product?.name || i.name || 'Unknown',
+      quantity: i.quantity || 1,
+      freeQty: i.freeQty || 0,
+      price: i.price || 0,
+      discount: i.discount1 || 0,
+      discount2: i.discount2 || 0,
+      hsn: i.product?.hsnCode || i.hsnCode || '-',
+      taxableValue: i.amount || 0,
+      total: i.amount || 0,
+      taxPercent: i.gstRate || 0
+  }));
+
+  let totalQty = 0;
+  let totalTaxable = 0;
+  let totalFinal = 0;
+  parsedItems.forEach(i => {
+      totalQty += Number(i.quantity);
+      totalTaxable += Number(i.taxableValue);
+      totalFinal += Number(i.total);
+  });
+  
+  // Apply document level discount if any
+  if (invoice.totalDiscount) {
+     totalFinal -= Number(invoice.totalDiscount);
+  }
+
+  const qrCodeUrl = allPrintSettings?.bankDetails?.upiId ? 
+      `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=${allPrintSettings.bankDetails.upiId}&pn=${encodeURIComponent(allPrintSettings.bankDetails.bankAccountName || company.name || '')}&am=${totalFinal}` : 
+      '';
 
   return (
-    <div style={styles.pageWrapper}>
+    <div className="min-h-screen bg-gray-200 flex flex-col items-center py-8">
       <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; }
-        .bill-card { animation: fadeIn 0.4s ease; }
-        .print-btn:hover { background: #4338ca !important; }
-        .print-btn:active { transform: scale(0.98); }
         @media print {
-          body * { visibility: hidden; }
-          .bill-card, .bill-card * { visibility: visible; }
-          .bill-card { position: fixed; left: 0; top: 0; width: 100%; animation: none; }
+          body { background-color: white !important; margin: 0 !important; padding: 0 !important; }
           .no-print { display: none !important; }
+          .print-container { box-shadow: none !important; margin: 0 !important; border: none !important; width: 100% !important; max-width: none !important; padding: 0 !important; }
+          @page { margin: 0; }
         }
       `}</style>
-
-      <div className="bill-card" style={styles.card}>
-
-        {/* ── Header ── */}
-        <div style={styles.header}>
-          <h1 style={styles.storeName}>{company.name || 'Bill Receipt'}</h1>
-          {company.address && (
-            <p style={styles.headerSub}>{company.address}</p>
-          )}
-          {company.phone && (
-            <p style={styles.headerSub}>📞 {company.phone}</p>
-          )}
-          {company.email && (
-            <p style={{ ...styles.headerSub, fontSize: 11 }}>{company.email}</p>
-          )}
-        </div>
-
-        {/* ── Invoice Meta ── */}
-        <div style={styles.metaRow}>
-          <div style={styles.metaBox}>
-            <span style={styles.metaLabel}>BILL NO</span>
-            <span style={styles.metaValue}>{invoice.invoiceNo}</span>
-          </div>
-          <div style={{ ...styles.metaBox, textAlign: 'right' }}>
-            <span style={styles.metaLabel}>DATE &amp; TIME</span>
-            <span style={styles.metaValue}>{invoiceDate}</span>
-            {invoiceTime && <span style={{ ...styles.metaLabel, marginTop: 1 }}>{invoiceTime}</span>}
-          </div>
-        </div>
-
-        {/* ── Customer Info ── */}
-        {customer.name && (
-          <div style={styles.customerBox}>
-            <span style={styles.sectionLabel}>CUSTOMER</span>
-            <div style={{ fontWeight: 700, color: '#1f2937', fontSize: 14, marginTop: 4 }}>{customer.name}</div>
-            {(customer.phone || customer.mobile) && (
-              <div style={styles.customerSub}>📞 {customer.phone || customer.mobile}</div>
-            )}
-            {customer.address && (
-              <div style={styles.customerSub}>📍 {customer.address}</div>
-            )}
-          </div>
-        )}
-
-        {/* ── Items ── */}
-        <div style={styles.itemsWrapper}>
-          {/* Header Row */}
-          <div style={styles.itemHeaderRow}>
-            <span style={{ flex: 1 }}>ITEM</span>
-            <span style={{ width: 40, textAlign: 'center' }}>QTY</span>
-            <span style={{ width: 80, textAlign: 'right' }}>AMOUNT</span>
-          </div>
-
-          {items.map((item, idx) => (
-            <div key={idx} style={styles.itemRow}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={styles.itemName}>{item.product?.name || 'Item'}</div>
-                {item.price > 0 && (
-                  <div style={styles.itemRate}>@₹{Number(item.price).toFixed(2)}</div>
-                )}
-              </div>
-              <div style={{ width: 40, textAlign: 'center', fontWeight: 700, color: '#374151', fontSize: 13, flexShrink: 0 }}>
-                {item.quantity}
-              </div>
-              <div style={{ width: 80, textAlign: 'right', fontWeight: 700, color: '#1f2937', fontSize: 13, flexShrink: 0 }}>
-                ₹{Number(item.amount).toFixed(2)}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Totals ── */}
-        <div style={styles.totalsBox}>
-          <div style={styles.totalRow}>
-            <span style={{ color: '#6b7280' }}>Subtotal</span>
-            <span style={{ color: '#6b7280' }}>₹{subtotal.toFixed(2)}</span>
-          </div>
-          {invoice.totalDiscount > 0 && (
-            <div style={styles.totalRow}>
-              <span style={{ color: '#16a34a' }}>Discount</span>
-              <span style={{ color: '#16a34a' }}>-₹{Number(invoice.totalDiscount).toFixed(2)}</span>
-            </div>
-          )}
-          <div style={styles.grandTotalRow}>
-            <span>TOTAL</span>
-            <span>₹{Number(invoice.totalAmount).toFixed(2)}</span>
-          </div>
-        </div>
-
-        {/* ── Payment Mode ── */}
-        {invoice.paymentMode && (
-          <div style={styles.paymentRow}>
-            <span style={{ color: '#6b7280' }}>Payment Mode</span>
-            <span style={{ fontWeight: 700, color: '#1f2937' }}>{invoice.paymentMode}</span>
-          </div>
-        )}
-
-        {/* ── Footer ── */}
-        <div style={styles.footer}>
-          <p style={{ margin: 0, fontSize: 13, color: '#4F46E5', fontWeight: 700 }}>*** Thank You For Shopping ***</p>
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#9ca3af' }}>Visit Again!</p>
-        </div>
-
-        {/* ── Print Button ── */}
-        <div className="no-print" style={{ padding: '16px' }}>
-          <button
-            className="print-btn"
+      
+      <div className="no-print w-full max-w-[210mm] mb-4 flex justify-between items-center px-4">
+          <h2 className="text-xl font-bold text-gray-800">Invoice Preview</h2>
+          <button 
             onClick={() => window.print()}
-            style={styles.printBtn}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition-colors"
           >
-            🖨️ Print This Bill
+            <Printer className="w-5 h-5" />
+            Print Document
           </button>
-        </div>
+      </div>
 
+      <div ref={printRef} className="print-container bg-white shadow-xl max-w-[210mm] w-full mx-auto" style={{ padding: customization.pageMargin + 'px' }}>
+         <Template1 
+            previewInvoice={mappedPreviewInvoice}
+            parsedItems={parsedItems}
+            totalQty={totalQty}
+            totalTaxable={totalTaxable.toFixed(2)}
+            totalFinal={totalFinal.toFixed(2)}
+            qrCodeUrl={qrCodeUrl}
+            allPrintSettings={allPrintSettings}
+            headerSettings={headerSettings}
+            tableSettings={tableSettings}
+            footerSettings={footerSettings}
+            customization={customization}
+            transactionType="General Template"
+            transactionType2={transactionType2}
+         />
       </div>
     </div>
   );
 }
-
-const styles = {
-  centeredPage: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#f4f6f9',
-    padding: '16px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-  spinner: {
-    width: 40,
-    height: 40,
-    border: '4px solid #4F46E5',
-    borderTopColor: 'transparent',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
-    margin: '0 auto',
-  },
-  pageWrapper: {
-    minHeight: '100vh',
-    background: '#f0f2f5',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    padding: '16px 12px 32px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 480,
-    background: '#fff',
-    borderRadius: 16,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-    overflow: 'hidden',
-  },
-  header: {
-    background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-    padding: '24px 20px 20px',
-    textAlign: 'center',
-    color: '#fff',
-  },
-  storeName: {
-    margin: 0,
-    fontSize: 'clamp(16px, 5vw, 22px)',
-    fontWeight: 800,
-    letterSpacing: 0.5,
-    lineHeight: 1.2,
-    wordBreak: 'break-word',
-  },
-  headerSub: {
-    margin: '4px 0 0',
-    fontSize: 12,
-    opacity: 0.85,
-    lineHeight: 1.4,
-    wordBreak: 'break-word',
-  },
-  metaRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '14px 16px',
-    borderBottom: '1px dashed #e5e7eb',
-    gap: 8,
-  },
-  metaBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 2,
-    minWidth: 0,
-  },
-  metaLabel: {
-    color: '#9ca3af',
-    fontSize: 10,
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    display: 'block',
-  },
-  metaValue: {
-    fontWeight: 700,
-    color: '#1f2937',
-    fontSize: 'clamp(11px, 3vw, 14px)',
-    wordBreak: 'break-all',
-    display: 'block',
-  },
-  customerBox: {
-    padding: '12px 16px',
-    borderBottom: '1px dashed #e5e7eb',
-    background: '#fafafa',
-  },
-  sectionLabel: {
-    color: '#9ca3af',
-    fontSize: 10,
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  customerSub: {
-    color: '#6b7280',
-    fontSize: 12,
-    marginTop: 3,
-    wordBreak: 'break-word',
-  },
-  itemsWrapper: {
-    padding: '0 16px',
-  },
-  itemHeaderRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '10px 0 8px',
-    borderBottom: '2px solid #1f2937',
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#374151',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  itemRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '10px 0',
-    borderBottom: '1px solid #f3f4f6',
-  },
-  itemName: {
-    fontWeight: 600,
-    color: '#1f2937',
-    fontSize: 13,
-    wordBreak: 'break-word',
-    lineHeight: 1.3,
-  },
-  itemRate: {
-    fontSize: 11,
-    color: '#9ca3af',
-    marginTop: 2,
-  },
-  totalsBox: {
-    padding: '12px 16px',
-    borderTop: '1px dashed #e5e7eb',
-  },
-  totalRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  grandTotalRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: 'clamp(16px, 5vw, 20px)',
-    fontWeight: 800,
-    color: '#4F46E5',
-    paddingTop: 10,
-    borderTop: '2px solid #4F46E5',
-    marginTop: 8,
-  },
-  paymentRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '10px 16px',
-    background: '#f9fafb',
-    borderTop: '1px dashed #e5e7eb',
-    fontSize: 13,
-  },
-  footer: {
-    padding: '14px 16px 16px',
-    textAlign: 'center',
-    borderTop: '1px dashed #e5e7eb',
-  },
-  printBtn: {
-    width: '100%',
-    background: '#4F46E5',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 10,
-    padding: '14px 0',
-    fontSize: 15,
-    fontWeight: 700,
-    cursor: 'pointer',
-    letterSpacing: 0.5,
-    transition: 'background 0.2s, transform 0.1s',
-    WebkitTapHighlightColor: 'transparent',
-  },
-};

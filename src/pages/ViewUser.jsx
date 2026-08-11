@@ -8,7 +8,7 @@ export function ViewUser() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('User Name');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  
+
   // Get user from local storage or use a default
   let currentUser = { name: 'SIDDALING A PADASALAGI', role: 'admin' };
   try {
@@ -19,23 +19,23 @@ export function ViewUser() {
         role: storedUser.role === 'SUPERADMIN' ? 'superadmin' : 'admin'
       };
     }
-  } catch(e) {}
+  } catch (e) { }
 
   return (
     <div className="w-full h-full bg-white flex flex-col p-2 sm:p-4 animate-in fade-in duration-200">
-      
+
       {/* Header Bar */}
       <div className="bg-[#4F46E5] text-white px-3 py-1.5 flex justify-between items-center rounded-t-md shadow-sm">
         <h2 className="text-[16px] font-medium tracking-wide">Users</h2>
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={() => setIsRegisterModalOpen(true)}
             className="bg-[#28a745] hover:bg-[#218838] text-white px-3 py-1 rounded-sm text-[13px] font-medium flex items-center gap-1 transition-colors"
           >
             <Plus className="w-4 h-4 stroke-[3px]" />
             New User
           </button>
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="bg-[#dc3545] hover:bg-[#c82333] text-white px-2 py-1 rounded-sm transition-colors"
           >
@@ -50,7 +50,7 @@ export function ViewUser() {
           <div className="px-2 flex items-center justify-center text-blue-500 border-r border-gray-200">
             <Filter className="w-4 h-4" />
           </div>
-          <select 
+          <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
             className="flex-1 px-2 text-[13px] text-gray-600 outline-none cursor-pointer"
@@ -59,9 +59,9 @@ export function ViewUser() {
             <option value="Role">User Role</option>
           </select>
         </div>
-        
-        <input 
-          type="text" 
+
+        <input
+          type="text"
           placeholder="Search for..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -104,7 +104,7 @@ export function ViewUser() {
         </table>
       </div>
 
-      <RegisterUserModal 
+      <RegisterUserModal
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
       />

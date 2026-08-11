@@ -144,8 +144,12 @@ export function SalesInvoiceSummary() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = (invoiceId) => {
+    if (invoiceId && typeof invoiceId === 'string') {
+      window.open(`/bill/${invoiceId}`, '_blank');
+    } else {
+      window.print();
+    }
   };
 
   const handleEdit = (id) => {
@@ -413,7 +417,7 @@ export function SalesInvoiceSummary() {
                 
                 {/* Card Actions */}
                 <div className="border-t border-gray-100 p-2 flex justify-between items-center bg-[#fdfdfd] rounded-b-[6px]">
-                  <button onClick={handlePrint} className="flex items-center justify-center gap-1.5 border border-[#ffc107] text-[#ffc107] bg-white hover:bg-yellow-50 px-3 py-1 rounded-[4px] text-[13px] font-medium transition-colors h-[30px]">
+                  <button onClick={() => handlePrint(row.invoiceId)} className="flex items-center justify-center gap-1.5 border border-[#ffc107] text-[#ffc107] bg-white hover:bg-yellow-50 px-3 py-1 rounded-[4px] text-[13px] font-medium transition-colors h-[30px]">
                     <Printer className="w-4 h-4" />
                     Print
                   </button>

@@ -20,6 +20,7 @@ import { SettingsDrawer } from './SettingsDrawer';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { ResetDatabaseModal } from './ResetDatabaseModal';
 import { LogoutModal } from './LogoutModal';
+import apiClient from '../api/apiClient';
 
 export function TopNavbar({ toggleSidebar, isOpen }) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -28,13 +29,52 @@ export function TopNavbar({ toggleSidebar, isOpen }) {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isResetDatabaseModalOpen, setIsResetDatabaseModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  
+  const [validityDate, setValidityDate] = useState('');
+  const [daysLeft, setDaysLeft] = useState('');
+
   let user = {};
   try {
     user = JSON.parse(localStorage.getItem('user')) || {};
   } catch(e) {}
+  
   const location = useLocation();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
+
+  React.useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const res = await apiClient.get('/auth/me');
+        if (res.data?.success && res.data?.data?.company?.expireDate) {
+          const expDate = new Date(res.data.data.company.expireDate);
+          
+          // Format date like '30-May-2026'
+          const formatted = expDate.toLocaleDateString('en-GB', { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric' 
+          }).replace(/ /g, '-');
+          
+          setValidityDate(formatted);
+          
+          // Calculate days left
+          const diffTime = expDate - new Date();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          setDaysLeft(diffDays > 0 ? diffDays : 0);
+        } else {
+          // Default fallback if not available
+          setValidityDate('Unlimited');
+          setDaysLeft('∞');
+        }
+      } catch (err) {
+        console.error("Failed to fetch user validity:", err);
+        setValidityDate('Unknown');
+        setDaysLeft('-');
+      }
+    };
+    fetchMe();
+  }, []);
 
   const changeLanguage = (e) => {
     const lang = e.target.value;
@@ -178,12 +218,14 @@ export function TopNavbar({ toggleSidebar, isOpen }) {
       {/* Right side */}
       <div className="flex items-center gap-[4px] sm:gap-[10px] flex-1 justify-end">
         {/* Validity Badge */}
-        <div className="flex flex-wrap items-center gap-1 bg-[#dc3545] px-1.5 sm:px-2.5 py-0.5 rounded-full text-white flex-shrink-0">
-          <span className="text-[9px] sm:text-[11px] font-medium tracking-wide whitespace-nowrap">
-            <span className="hidden sm:inline">Validity - </span>
-            30-May-2026 <span className="font-bold hidden xs:inline">6 days left</span>
-          </span>
-        </div>
+        {validityDate && (
+          <div className="flex flex-wrap items-center gap-1 bg-[#dc3545] px-1.5 sm:px-2.5 py-0.5 rounded-full text-white flex-shrink-0">
+            <span className="text-[9px] sm:text-[11px] font-medium tracking-wide whitespace-nowrap">
+              <span className="hidden sm:inline">Validity - </span>
+              {validityDate} <span className="font-bold hidden xs:inline">{daysLeft} days left</span>
+            </span>
+          </div>
+        )}
 
         {/* Utility Icons — hidden on very small screens */}
         <div className="hidden sm:flex items-center gap-[6px] sm:gap-[10px]">
@@ -336,6 +378,29 @@ export function TopNavbar({ toggleSidebar, isOpen }) {
         isOpen={isLogoutModalOpen} 
         onClose={() => setIsLogoutModalOpen(false)} 
       />
+
+      {/* Plan Expired Modal */}
+      {typeof daysLeft === 'number' && daysLeft <= 0 && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-red-600 text-3xl">⚠️</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Plan Has Expired</h2>
+            <p className="text-gray-600 mb-6">
+              Your subscription plan ended on <strong>{validityDate}</strong>. Please contact the administrator or upgrade your plan to restore full access to your account.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => setIsLogoutModalOpen(true)}
+                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

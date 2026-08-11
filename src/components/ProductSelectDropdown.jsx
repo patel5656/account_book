@@ -4,10 +4,11 @@ import { Edit, Trash2, Filter, ChevronDown, Package, ScanBarcode, X } from 'luci
 import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { useSettings } from '../context/SettingsContext';
 
-export function ProductSelectDropdown({ products, value, onChange, onEdit, onDelete, showPurchasePrice, searchMode = 'Product Name' }) {
+export function ProductSelectDropdown({ products, value, selectedVariant, onChange, onEdit, onDelete, showPurchasePrice, searchMode = 'Product Name' }) {
   const { settings } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedProductId, setExpandedProductId] = useState(null);
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
   const [menuRect, setMenuRect] = useState(null);
@@ -122,8 +123,8 @@ export function ProductSelectDropdown({ products, value, onChange, onEdit, onDel
     }
   };
 
-  const handleSelect = (productId) => {
-    onChange(productId);
+  const handleSelect = (productId, variant = null) => {
+    onChange(productId, variant);
     setIsOpen(false);
     setSearchTerm('');
   };
@@ -146,7 +147,9 @@ export function ProductSelectDropdown({ products, value, onChange, onEdit, onDel
               } catch (e) {}
             }
             let variantStr = '';
-            if (settings?.manageVariants) {
+            if (selectedVariant && selectedVariant.name) {
+              variantStr = ` - ${selectedVariant.name}`;
+            } else if (settings?.manageVariants) {
               if (Array.isArray(subItemsList) && subItemsList.length > 0) {
                 variantStr = ` (${subItemsList.length} Variant${subItemsList.length > 1 ? 's' : ''}: ${subItemsList.map(v => [v.size, v.color].filter(Boolean).join('/')).filter(Boolean).join(', ')})`;
               } else if (selectedProduct.colour || selectedProduct.colorVariant || selectedProduct.size) {
@@ -262,16 +265,37 @@ export function ProductSelectDropdown({ products, value, onChange, onEdit, onDel
                           } catch (e) {}
                         }
                         if (Array.isArray(subItemsList) && subItemsList.length > 0) {
+                          const isExpanded = expandedProductId === p.id;
                           return (
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                              <span className="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded font-bold">
-                                {subItemsList.length} Variant{subItemsList.length > 1 ? 's' : ''}:
-                              </span>
-                              {subItemsList.map((v, vIdx) => (
-                                <span key={vIdx} className="text-[10px] bg-gray-100 border border-gray-200 text-gray-700 px-1.5 py-0.5 rounded font-medium">
-                                  {[v.size ? `Size: ${v.size}` : '', v.color ? `Color: ${v.color}` : '', v.price ? `₹${v.price}` : ''].filter(Boolean).join(' ')}
-                                </span>
-                              ))}
+                            <div className="flex flex-col mt-1" onClick={e => e.stopPropagation()}>
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setExpandedProductId(isExpanded ? null : p.id);
+                                }}
+                                className="w-max text-[10px] bg-indigo-600 text-white hover:bg-indigo-700 px-2 py-0.5 rounded font-bold shadow-sm flex items-center gap-1 transition-colors"
+                              >
+                                {isExpanded ? <ChevronDown className="w-3 h-3" /> : <Package className="w-3 h-3" />}
+                                {subItemsList.length} Variant{subItemsList.length > 1 ? 's' : ''}
+                              </button>
+                              
+                              {isExpanded && (
+                                <div className="mt-2 flex flex-col gap-1 border border-indigo-100 rounded bg-indigo-50/50 p-1">
+                                  {subItemsList.map((v, vIdx) => (
+                                    <div 
+                                      key={vIdx} 
+                                      onClick={() => handleSelect(p.id, v)}
+                                      className="flex justify-between items-center bg-white p-1.5 border border-gray-200 rounded cursor-pointer hover:bg-indigo-100 hover:border-indigo-300 transition-colors"
+                                    >
+                                      <span className="text-[11px] font-bold text-gray-800">
+                                        {[v.name, v.size ? `Size: ${v.size}` : '', v.color ? `Color: ${v.color}` : ''].filter(Boolean).join(' - ')}
+                                      </span>
+                                      {v.price > 0 && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">₹{Number(v.price).toFixed(2)}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           );
                         } else if (p.size || p.colour || p.colorVariant) {
