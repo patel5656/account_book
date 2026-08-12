@@ -64,6 +64,8 @@ export function SalesInvoice() {
   const [tempBatchData, setTempBatchData] = useState({ batchNo: '', expDate: '', mfgDate: '' });
   const [isQuantityCalcOpen, setIsQuantityCalcOpen] = useState(false);
   const [activeQuantityRow, setActiveQuantityRow] = useState(null);
+  const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
+  const [savedInvoiceNo, setSavedInvoiceNo] = useState("");
   
   // Batch Settings
   const [batchSettings, setBatchSettings] = useState({
@@ -409,11 +411,26 @@ export function SalesInvoice() {
     const product = products.find(p => p.id === parseInt(productId));
     if (!product) return;
 
+    if (settings?.negativeStockLock) {
+      if (1 > (product.stock || 0)) {
+        alert('Negative Stock Lock is enabled. Insufficient stock!');
+        return;
+      }
+    }
+
     // We identify a unique row by productId AND variant name (if present)
     const existingIndex = rows.findIndex((r, i) => i !== index && parseInt(r.productId) === product.id && r.variantName === (variant?.name || ""));
 
     if (existingIndex !== -1) {
       // Product already in list — increment its qty, reset current row to empty
+      if (settings?.negativeStockLock) {
+        const currentQty = Number(rows[existingIndex].qty) || 0;
+        if (currentQty + 1 > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+      
       const newRows = [...rows];
       newRows[existingIndex] = { 
         ...newRows[existingIndex], 
@@ -463,6 +480,17 @@ export function SalesInvoice() {
   };
 
   const updateRow = (index, field, value) => {
+    if (settings?.negativeStockLock && ['qty', 'primaryOpeningQty', 'secOpeningQty'].includes(field)) {
+      const productId = rows[index].productId;
+      if (productId) {
+        const product = products.find(p => p.id === parseInt(productId));
+        if (product && Number(value) > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+    }
+
     const newRows = [...rows];
     newRows[index][field] = value;
     
@@ -852,7 +880,10 @@ export function SalesInvoice() {
       else if (isReturn) type = 'sales_return';
       else if (isCustomerChallan) type = 'challan';
 
-      await createTransaction(type, payload);
+      const response = await createTransaction(type, payload);
+      if (response.data && response.data.invoiceNo) {
+        setSavedInvoiceNo(response.data.invoiceNo);
+      }
       
       if (activeHoldId) {
          try { await deleteTransaction(activeHoldId); } catch(e) { console.error("Error deleting hold after save", e); }
@@ -871,19 +902,8 @@ export function SalesInvoice() {
         ipAddress: '127.0.0.1' // Ideally captured in backend, passing dummy for now
       });
 
-      alert('Invoice Saved Successfully!');
-      
       setIsPaymentStatusModalOpen(false);
-      setRows([createEmptyRow()]);
-      setSelectedCustomerId("");
-      setCustomerInput("");
-      setRemark("");
-      setManualDiscPercent("");
-      setManualDiscAmount("");
-      setManualFreightAmt("");
-      setManualFreightGst("");
-      setManualTcsPercent("");
-      setManualTcsAmt("");
+      setShowBarcodePrintModal(true);
       
     } catch (error) {
       console.error(error);
@@ -2057,7 +2077,7 @@ export function SalesInvoice() {
             setIsQuantityCalcOpen(false);
             setActiveQuantityRow(null);
           }}
-          initialData={{
+           initialData={{
              productName: rows[activeQuantityRow]?.productName || products.find(p => p.id === parseInt(rows[activeQuantityRow]?.productId))?.name || 'Unknown Item',
              hsn: rows[activeQuantityRow]?.hsn,
              rollQty: rows[activeQuantityRow]?.rollQty,
@@ -2066,6 +2086,7 @@ export function SalesInvoice() {
              price: rows[activeQuantityRow]?.price,
              disc1: rows[activeQuantityRow]?.disc1,
              taxRate: rows[activeQuantityRow]?.taxRate,
+             isGstInclusive: rows[activeQuantityRow]?.isGstInclusive,
           }}
           onSave={(calcData) => {
              const newRows = [...rows];
@@ -2074,15 +2095,52 @@ export function SalesInvoice() {
                rollQty: calcData.rollQty,
                meterPerRoll: calcData.meterPerRoll,
                qty: calcData.qty,
+               primaryOpeningQty: calcData.qty,
+               secOpeningQty: 0,
                price: calcData.price,
                disc1: calcData.disc1,
                taxRate: calcData.taxRate,
+               isGstInclusive: calcData.isGstInclusive,
              };
              setRows(newRows);
              setIsQuantityCalcOpen(false);
              setActiveQuantityRow(null);
           }}
         />
+      )}
+
+      {showBarcodePrintModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[5px] shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col p-8 text-center animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-[80px] h-[80px] border-[3px] border-[#87adbd] rounded-full flex items-center justify-center mb-6">
+              <span className="text-[#87adbd] text-[40px] font-medium leading-none">?</span>
+            </div>
+            <h2 className="text-[24px] font-bold text-[#545454] mb-8 leading-tight">
+              Do you want to print the Invoice<br/>now?
+            </h2>
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => {
+                  setShowBarcodePrintModal(false);
+                  if (savedInvoiceNo) {
+                    window.open(`/bill/${savedInvoiceNo}`, '_blank');
+                  }
+                }}
+                className="bg-[#3085d6] hover:bg-[#2874ba] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
+              >
+                Yes, Print it!
+              </button>
+              <button 
+                onClick={() => {
+                  setShowBarcodePrintModal(false);
+                }}
+                className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

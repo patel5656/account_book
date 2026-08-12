@@ -132,6 +132,11 @@ export function PublicBillPage() {
       customerGst: customer.gstin || customer.gst || '',
       customerPan: customer.pan || '',
       
+      shippingName: invoice.shippingName || customer.name || '',
+      shippingAddress: invoice.shippingAddress || customer.address || '',
+      shippingPhone: invoice.shippingPhone || customer.phone || customer.mobile || '',
+      shippingGst: invoice.shippingGst || customer.gstin || customer.gst || '',
+      
       invoiceNumber: invoice.invoiceNo || '',
       invoiceDate: invoiceDate,
       deliveryChallanNo: invoice.deliveryChallanNo || '',
@@ -139,19 +144,64 @@ export function PublicBillPage() {
       
       ackNo: invoice.ackNo || '',
       ackDate: invoice.ackDate || '',
-      irn: invoice.irn || ''
+      irn: invoice.irn || '',
+      
+      transportName: invoice.transportName || '',
+      documentNo: invoice.documentNo || '',
+      documentDate: invoice.documentDate || '',
+      
+      poNo: invoice.poNo || '',
+      poDate: invoice.poDate || '',
+      
+      ewayBillNo: invoice.ewayBillNo || '',
+      ewayBillDate: invoice.ewayBillDate || '',
+      vehicleNo: invoice.vehicleNo || '',
+      
+      customField1: invoice.customField1 || '',
+      customField2: invoice.customField2 || '',
+      customField3: invoice.customField3 || '',
+      
+      totalInWords: invoice.totalInWords || '',
+      paymentDetails: invoice.paymentDetails || '',
+      terms: invoice.termsAndConditions || '',
+      notes: invoice.notes || '',
+      signatureUrl: company.signatureUrl || company.signature || '',
+      
+      bankDetails: {
+          bankName: allPrintSettings?.bankDetails?.bankName || company.bankName || '',
+          ifscCode: allPrintSettings?.bankDetails?.ifscCode || company.ifscCode || '',
+          accountNumber: allPrintSettings?.bankDetails?.accountNumber || company.accountNumber || '',
+          branchName: allPrintSettings?.bankDetails?.branchName || company.branchName || '',
+          accountName: allPrintSettings?.bankDetails?.bankAccountName || company.accountName || ''
+      },
+      upiId: allPrintSettings?.bankDetails?.upiId || company.upiId || '',
+      
+      totalIgst: invoice.totalIgst || 0,
+      totalGstAmount: invoice.totalGstAmount || 0,
+      roundOff: invoice.roundOff || 0
   };
 
   const parsedItems = items.map(i => ({
       name: i.product?.name || i.name || 'Unknown',
+      productCode: i.product?.sku || i.product?.barcode || '-',
+      batchNo: i.batchNo || '-',
       quantity: i.quantity || 1,
       freeQty: i.freeQty || 0,
       price: i.price || 0,
+      purchasePrice: i.product?.purchasePrice || i.purchasePrice || 0,
+      mrp: i.mrp || i.product?.mrp || 0,
+      pcs: i.quantity || 1,
+      secQty: i.secQty || 0,
+      priQty: i.priQty || i.quantity || 1,
+      unit: i.product?.baseUnit || i.unit || 'PCS',
+      size: i.product?.size || i.size || '-',
+      pcsRate: i.price || 0,
       discount: i.discount1 || 0,
       discount2: i.discount2 || 0,
+      totalDiscount: (i.discountAmount || 0) + (i.discount2Amount || 0),
       hsn: i.product?.hsnCode || i.hsnCode || '-',
       taxableValue: i.amount || 0,
-      total: i.amount || 0,
+      total: i.total || i.amount || 0,
       taxPercent: i.gstRate || 0
   }));
 

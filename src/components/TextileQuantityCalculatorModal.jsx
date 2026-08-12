@@ -13,6 +13,7 @@ export function TextileQuantityCalculatorModal({ isOpen, onClose, onSave, initia
   const [ratePerMeter, setRatePerMeter] = useState('');
   const [discountPercent, setDiscountPercent] = useState('');
   const [gstPercent, setGstPercent] = useState('');
+  const [isGstInclusive, setIsGstInclusive] = useState(false);
   
   const [isTotalMeterManual, setIsTotalMeterManual] = useState(false);
 
@@ -28,9 +29,19 @@ export function TextileQuantityCalculatorModal({ isOpen, onClose, onSave, initia
          setTotalMeterManual('');
       }
 
-      setRatePerMeter(initialData?.price || '');
+      const savedPrice = parseFloat(initialData?.price) || 0;
+      const savedGstRate = parseFloat(initialData?.taxRate) || 0;
+      const savedIsInclusive = initialData?.isGstInclusive || false;
+      
+      if (savedIsInclusive && savedPrice > 0) {
+          setRatePerMeter((savedPrice * (1 + (savedGstRate / 100))).toFixed(2));
+      } else {
+          setRatePerMeter(initialData?.price || '');
+      }
+      
       setDiscountPercent(initialData?.disc1 || '');
       setGstPercent(initialData?.taxRate || '');
+      setIsGstInclusive(savedIsInclusive);
       setIsTotalMeterManual(false);
 
       setTimeout(() => {
@@ -60,10 +71,17 @@ export function TextileQuantityCalculatorModal({ isOpen, onClose, onSave, initia
   const discPercent = parseFloat(discountPercent) || 0;
   const discountAmount = (grossAmount * discPercent) / 100;
   
-  const taxableAmount = grossAmount - discountAmount;
-  
+  let taxableAmount = grossAmount - discountAmount;
   const gstRate = parseFloat(gstPercent) || 0;
-  const gstAmount = (taxableAmount * gstRate) / 100;
+  let gstAmount = 0;
+
+  if (isGstInclusive) {
+      const netAmountCalc = taxableAmount;
+      taxableAmount = netAmountCalc / (1 + (gstRate / 100));
+      gstAmount = netAmountCalc - taxableAmount;
+  } else {
+      gstAmount = (taxableAmount * gstRate) / 100;
+  }
   
   const netAmount = taxableAmount + gstAmount;
 
@@ -92,12 +110,13 @@ export function TextileQuantityCalculatorModal({ isOpen, onClose, onSave, initia
       rollQty: rQty,
       meterPerRoll: mPR,
       qty: computedTotalMeter, // Total Meter becomes the quantity
-      price: rate,
+      price: isGstInclusive ? (rate / (1 + (gstRate/100))) : rate,
       disc1: discPercent,
       taxRate: gstRate,
       amount: netAmount,
       d1Amt: discountAmount,
-      gstAmount: gstAmount
+      gstAmount: gstAmount,
+      isGstInclusive: isGstInclusive
     });
   };
 
@@ -248,19 +267,32 @@ export function TextileQuantityCalculatorModal({ isOpen, onClose, onSave, initia
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3">
-                  <label className="text-[13px] font-bold text-gray-700 w-[100px]">GST %</label>
-                  <input 
-                    id="calc_gst"
-                    type="number" 
-                    min="0"
-                    step="any"
-                    value={gstPercent} 
-                    onChange={(e) => setGstPercent(e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, 'save')}
-                    className="flex-1 bg-white border border-gray-300 rounded-[3px] px-3 py-1.5 text-[14px] font-semibold text-gray-800 outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-right"
-                    placeholder="0"
-                  />
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-[13px] font-bold text-gray-700 w-[100px]">GST %</label>
+                    <input 
+                      id="calc_gst"
+                      type="number" 
+                      min="0"
+                      step="any"
+                      value={gstPercent} 
+                      onChange={(e) => setGstPercent(e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, 'save')}
+                      className="flex-1 bg-white border border-gray-300 rounded-[3px] px-3 py-1.5 text-[14px] font-semibold text-gray-800 outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-right"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="flex justify-end mt-1">
+                     <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input 
+                           type="checkbox" 
+                           checked={isGstInclusive}
+                           onChange={(e) => setIsGstInclusive(e.target.checked)}
+                           className="w-3.5 h-3.5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-[11px] font-semibold text-gray-600">GST Inclusive</span>
+                     </label>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
