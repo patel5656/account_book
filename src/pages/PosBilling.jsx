@@ -454,6 +454,17 @@ export function PosBilling() {
         setLastInvoiceId(invoiceData?.id || null);
         setLastInvoiceNo(invoiceData?.invoiceNo || `POS-${Date.now()}`);
         setIsPrintModalOpen(true);
+        
+        if (activeHoldId) {
+          try {
+            await deleteTransaction(activeHoldId);
+            setHoldSuccessMsgs(prev => prev.filter(h => h.id !== activeHoldId));
+            setActiveHoldId(null);
+            setIsBillOnHold(false);
+          } catch (e) {
+            console.error("Error deleting hold after checkout", e);
+          }
+        }
       }
     } catch (error) {
       console.error("Checkout failed:", error);

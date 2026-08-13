@@ -59,7 +59,7 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
   const [isSizeDropdownOpen, setIsSizeDropdownOpen] = useState(false);
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
 
-  const defaultSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', ...Array.from({ length: 40 }, (_, i) => String(i + 1))];
+  const defaultSizes = ['XLL', 'S', 'M', 'L', 'XL', 'XXL', '3XL', ...Array.from({ length: 44 }, (_, i) => String(i + 1))];
   const defaultColors = [
     { name: 'Black', hex: '#000000' },
     { name: 'White', hex: '#FFFFFF' },
@@ -451,6 +451,19 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
     }
   };
 
+  const getNextBarcode = () => {
+    let max = 999;
+    products.forEach(p => {
+      if (p.barcode) {
+        const num = parseInt(p.barcode, 10);
+        if (!isNaN(num) && num.toString() === p.barcode && num > max) {
+          max = num;
+        }
+      }
+    });
+    return (max + 1).toString();
+  };
+
   const handleSave = () => {
     setSlabError('');
     if (qtySlabs.length > 0) {
@@ -499,7 +512,7 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
       category: category || '',
       brand: brand || '',
       sku: sku || `SKU${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      barcode: barcode || Math.floor(Math.random() * 1000000000).toString(),
+      barcode: barcode || getNextBarcode(),
       mrp: (mrp && mrp !== '0') ? mrp : (subItemsList.find(s => s.mrp > 0)?.mrp?.toString() || '0'),
       price: (price && price !== '0') ? price : (subItemsList.find(s => s.price > 0)?.price?.toString() || '0'),
       qty: qty || '0',
@@ -675,7 +688,10 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
                       }}
                     />
                     {showCategoryDropdown && (
-                      <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-50 rounded-b-[4px] max-h-[200px] overflow-y-auto custom-scrollbar">
+                      <div 
+                        className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-[100] rounded-b-[4px] max-h-[200px] overflow-y-auto pos-product-scroll"
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
                         {categoriesList
                           .filter(cat => cat.name.toLowerCase().includes(category.toLowerCase()))
                           .map(cat => (
@@ -723,7 +739,10 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
                     className="w-full border border-gray-300 rounded-[3px] px-3 py-1.5 text-[13px] outline-none focus:border-[#4F46E5] text-gray-800 bg-white"
                   />
                   {showBrandDropdown && (
-                    <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-50 rounded-b-[4px] max-h-[200px] overflow-y-auto custom-scrollbar mt-1">
+                    <div 
+                      className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-[100] rounded-b-[4px] max-h-[200px] overflow-y-auto pos-product-scroll mt-1"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
                       {[...new Set(products.map(p => p.brand).filter(Boolean))]
                         .filter(b => b.toLowerCase().includes(brand.toLowerCase()))
                         .map((b, idx) => (
@@ -1236,7 +1255,7 @@ export function ItemMasterModal({ isOpen, onClose, onSave, editData, products = 
                         className="w-full border border-gray-300 rounded-l-[3px] px-3 py-2 text-[14px] outline-none focus:border-[#4F46E5] font-mono"
                       />
                       <button
-                        onClick={() => setBarcode('890123456789')}
+                        onClick={() => setBarcode(getNextBarcode())}
                         className="bg-[#4F46E5] hover:bg-[#4338ca] text-white px-4 py-2 rounded-r-[3px] text-[13px] font-bold transition-colors whitespace-nowrap flex items-center gap-1.5"
                       >
                         <RefreshCw className="w-4 h-4" /> Generate

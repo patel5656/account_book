@@ -134,7 +134,9 @@ export function SettingsDrawer({ isOpen, onClose }) {
                <ToggleSetting label="S.Unit" checked={settings.sUnit} onChange={() => toggleSetting('sUnit')} />
                <ToggleSetting label="Show Price Warning" checked={settings.showPriceWarning} onChange={() => toggleSetting('showPriceWarning')} />
 
-               <ToggleSetting label="Negative Stock Lock" checked={settings.negativeStockLock} onChange={() => toggleSetting('negativeStockLock')} />
+               {!location.pathname.toLowerCase().includes('purchase') && (
+                 <ToggleSetting label="Negative Stock Lock" checked={settings.negativeStockLock} onChange={() => toggleSetting('negativeStockLock')} />
+               )}
                <ToggleSetting label="Use Product Code" checked={settings.useProductCode} onChange={() => toggleSetting('useProductCode')} />
                <ToggleSetting label="Sale by Commission" checked={settings.saleByCommission} onChange={() => toggleSetting('saleByCommission')} />
                <ToggleSetting label="Manufacture" checked={settings.manufacture} onChange={() => toggleSetting('manufacture')} />

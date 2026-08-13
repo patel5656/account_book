@@ -32,7 +32,8 @@ export function Dashboard() {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPrivacyOn, setIsPrivacyOn] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('2026-05-23');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [metrics, setMetrics] = useState({
     totalCustomers: 0,
     totalProducts: 0,

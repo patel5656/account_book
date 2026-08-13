@@ -509,15 +509,6 @@ export function PurchaseOrder() {
     // We identify a unique row by productId AND variant name (if present)
     const existingIndex = newRows.findIndex((r, i) => i !== index && r.productId === parseInt(productId) && r.variantName === (variant?.name || ""));
     if (existingIndex !== -1) {
-      if (settings?.negativeStockLock) {
-        const product = products.find(p => p.id === parseInt(productId));
-        const currentQty = Number(newRows[existingIndex].qty) || 0;
-        if (product && currentQty + 1 > (product.stock || 0)) {
-          alert('Negative Stock Lock is enabled. Insufficient stock!');
-          return;
-        }
-      }
-      
       newRows[existingIndex] = {
         ...newRows[existingIndex],
         qty: (Number(newRows[existingIndex].qty) || 0) + 1,
@@ -531,13 +522,6 @@ export function PurchaseOrder() {
 
     const product = products.find(p => p.id === parseInt(productId));
     if (product) {
-      if (settings?.negativeStockLock) {
-        if (1 > (product.stock || 0)) {
-          alert('Negative Stock Lock is enabled. Insufficient stock!');
-          return;
-        }
-      }
-
       let pMRP = product.mrp || 0;
       let pPrice = product.purchasePrice || product.price || 0;
 
@@ -578,17 +562,6 @@ export function PurchaseOrder() {
   };
 
   const updateRow = (index, field, value) => {
-    if (settings?.negativeStockLock && ['qty', 'primaryOpeningQty', 'secOpeningQty'].includes(field)) {
-      const productId = rows[index].productId;
-      if (productId) {
-        const product = products.find(p => p.id === parseInt(productId));
-        if (product && Number(value) > (product.stock || 0)) {
-          alert('Negative Stock Lock is enabled. Insufficient stock!');
-          return;
-        }
-      }
-    }
-
     const newRows = [...rows];
     newRows[index][field] = value;
 

@@ -63,6 +63,61 @@ export function ExpenseLedgerReport() {
     }
   };
 
+  const formatDateForFilter = (date) => {
+    const d = new Date(date);
+    const month = '' + (d.getMonth() + 1);
+    const day = '' + d.getDate();
+    const year = d.getFullYear();
+    return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
+  };
+
+  useEffect(() => {
+    const today = new Date();
+    const todayStr = formatDateForFilter(today);
+    
+    switch (dateFilter) {
+      case "All Time":
+        setFromDate("");
+        setToDate(todayStr);
+        break;
+      case "Today":
+        setFromDate(todayStr);
+        setToDate(todayStr);
+        break;
+      case "Yesterday":
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        setFromDate(formatDateForFilter(yesterday));
+        setToDate(formatDateForFilter(yesterday));
+        break;
+      case "Last 7 Days":
+        const last7 = new Date(today);
+        last7.setDate(last7.getDate() - 7);
+        setFromDate(formatDateForFilter(last7));
+        setToDate(todayStr);
+        break;
+      case "Last 30 Days":
+        const last30 = new Date(today);
+        last30.setDate(last30.getDate() - 30);
+        setFromDate(formatDateForFilter(last30));
+        setToDate(todayStr);
+        break;
+      case "Last Month":
+        const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        setFromDate(formatDateForFilter(startOfLastMonth));
+        setToDate(formatDateForFilter(endOfLastMonth));
+        break;
+      case "This Month":
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        setFromDate(formatDateForFilter(startOfMonth));
+        setToDate(todayStr);
+        break;
+      default:
+        break;
+    }
+  }, [dateFilter]);
+
   const getFilteredTransactions = () => {
     return transactions.filter(t => {
       const tDate = new Date(t.date);
