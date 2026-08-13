@@ -93,6 +93,7 @@ export function PurchaseInvoice() {
   const [isQuantityCalcOpen, setIsQuantityCalcOpen] = useState(false);
   const [activeQuantityRow, setActiveQuantityRow] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [editInvoiceId, setEditInvoiceId] = useState(null);
 
   useEffect(() => {
     if (selectedSupplierId) {
@@ -129,6 +130,7 @@ export function PurchaseInvoice() {
       const params = new URLSearchParams(location.search);
       const invoiceId = params.get('id');
       if (invoiceId) {
+        setEditInvoiceId(invoiceId);
         const invRes = await apiClient.get(`/inventory/single/${invoiceId}`);
         if (invRes.data?.success) {
           const inv = invRes.data.data;
@@ -763,6 +765,9 @@ export function PurchaseInvoice() {
     };
 
     try {
+      if (editInvoiceId) {
+        await apiClient.delete(`/inventory/${editInvoiceId}`);
+      }
       const res = await apiClient.post(`/inventory/${transactionType}`, payload);
       if (res.data) {
         setIsPaymentStatusModalOpen(false);
@@ -1747,6 +1752,7 @@ export function PurchaseInvoice() {
               <button 
                 onClick={() => {
                   setShowBarcodePrintModal(false);
+                  window.location.href = location.pathname;
                 }}
                 className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
               >

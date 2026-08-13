@@ -525,7 +525,7 @@ export function GstrPurchaseSummary() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-sm shadow-xl w-full max-w-[450px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
             {/* Header */}
-            <div className="bg-[#17a2b8] flex items-center justify-between pl-4 pr-1 py-1.5">
+            <div className="bg-[#4F46E5] flex items-center justify-between pl-4 pr-1 py-1.5">
               <h2 className="text-[15px] text-white font-medium">Select Date Range</h2>
               <button 
                 onClick={() => setIsCustomRangeModalOpen(false)}

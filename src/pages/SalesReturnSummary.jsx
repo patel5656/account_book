@@ -23,6 +23,7 @@ export function SalesReturnSummary() {
   const [isCollectionReportModalOpen, setIsCollectionReportModalOpen] = useState(false);
   const [isLoadingSheetModalOpen, setIsLoadingSheetModalOpen] = useState(false);
   const [invoices, setInvoices] = useState([]);
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
   
   const [dateFilter, setDateFilter] = useState('Today');
   const [fromDate, setFromDate] = useState(new Date().toISOString().split('T')[0]);
@@ -134,6 +135,20 @@ export function SalesReturnSummary() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedInvoices.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedInvoices.length} selected invoice(s)?`)) return;
+    try {
+      await Promise.all(selectedInvoices.map(id => apiClient.delete(`/inventory/${id}`)));
+      setSelectedInvoices([]);
+      fetchInvoices();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete some or all selected invoices");
+      fetchInvoices();
+    }
+  };
+
   return (
     <div className="bg-[#f8f9fa] min-h-[calc(100vh-45px)] flex flex-col p-3">
       <div className="bg-white rounded shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
@@ -238,6 +253,30 @@ export function SalesReturnSummary() {
         {/* Main Content Area */}
         <div className="flex-1 bg-[#f0f2f5] overflow-auto custom-scrollbar p-3">
           <div className="max-w-[1200px] mx-auto space-y-3">
+            {invoices.length > 0 && (
+              <div className="flex items-center justify-between bg-white p-2 rounded-[5px] shadow-sm border border-gray-200">
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedInvoices.length > 0 && selectedInvoices.length === invoices.length}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedInvoices(invoices.map(inv => inv.id));
+                      else setSelectedInvoices([]);
+                    }}
+                    className="w-4 h-4 cursor-pointer rounded-sm"
+                  />
+                  <span className="text-[13px] font-medium text-gray-700">Select All</span>
+                </div>
+                {selectedInvoices.length > 0 && (
+                  <button 
+                    onClick={handleBulkDelete}
+                    className="bg-[#dc3545] hover:bg-[#c82333] text-white px-3 py-1.5 rounded-[4px] text-[13px] font-medium flex items-center gap-1.5 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" /> Delete Selected ({selectedInvoices.length})
+                  </button>
+                )}
+              </div>
+            )}
             {invoices.map((invoice, index) => {
               const paidAmount = invoice.status === 'PAID' ? invoice.totalAmount : 0;
               const balanceAmount = invoice.totalAmount - paidAmount;
@@ -258,7 +297,15 @@ export function SalesReturnSummary() {
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1.5 text-gray-500 mb-1">
                         <span className="font-bold text-[14px] text-gray-800">{index + 1}.</span>
-                        <input type="checkbox" className="w-3.5 h-3.5 cursor-pointer rounded-sm border-gray-300" />
+                        <input 
+                          type="checkbox" 
+                          checked={selectedInvoices.includes(invoice.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedInvoices(prev => [...prev, invoice.id]);
+                            else setSelectedInvoices(prev => prev.filter(id => id !== invoice.id));
+                          }}
+                          className="w-3.5 h-3.5 cursor-pointer rounded-sm border-gray-300" 
+                        />
                         <span className="text-[12.5px] ml-1">#Invoice No : {invoice.invoiceNo}</span>
                       </div>
                       <div className="text-[15px] font-medium text-gray-700 leading-tight">

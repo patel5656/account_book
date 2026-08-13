@@ -87,6 +87,7 @@ export function PurchaseOrder() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [editInvoiceId, setEditInvoiceId] = useState(null);
 
   useEffect(() => {
     const init = async () => {
@@ -94,6 +95,7 @@ export function PurchaseOrder() {
       const params = new URLSearchParams(location.search);
       const invoiceId = params.get('id');
       if (invoiceId) {
+        setEditInvoiceId(invoiceId);
         try {
           const invRes = await apiClient.get(`/inventory/single/${invoiceId}`);
           if (invRes.data?.success) {
@@ -260,6 +262,7 @@ export function PurchaseOrder() {
     const payload = {
       customerId: selectedCustomerId,
       date: invoiceDate,
+      invoiceNo: searchInvoiceNo || undefined,
       paymentMode,
       remark: 'Purchase Order',
       subTotal: grandBaseAmount,
@@ -273,6 +276,9 @@ export function PurchaseOrder() {
     };
 
     try {
+      if (editInvoiceId) {
+        await apiClient.delete(`/inventory/${editInvoiceId}`);
+      }
       await apiClient.post('/inventory/PURCHASE_ORDER', payload);
       alert('Purchase Order Saved Successfully!');
       setIsPaymentStatusModalOpen(false);
@@ -1654,7 +1660,7 @@ export function PurchaseOrder() {
               <button 
                 onClick={() => {
                   setShowBarcodePrintModal(false);
-                  navigate('/admin/invoice-details/company_purchase_order');
+                  window.location.href = location.pathname;
                 }}
                 className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
               >

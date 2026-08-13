@@ -87,6 +87,7 @@ export function SalesInvoice() {
   const [isConvertMenuOpen, setIsConvertMenuOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
+  const [editInvoiceId, setEditInvoiceId] = useState(null);
 
   const loadHeldInvoice = async (id) => {
     try {
@@ -261,6 +262,7 @@ export function SalesInvoice() {
       const params = new URLSearchParams(location.search);
       const invoiceId = params.get('id');
       if (invoiceId) {
+        setEditInvoiceId(invoiceId);
         const invRes = await apiClient.get(`/inventory/single/${invoiceId}`);
         if (invRes.data?.success) {
           const inv = invRes.data.data;
@@ -911,6 +913,10 @@ export function SalesInvoice() {
     };
 
     try {
+      if (editInvoiceId) {
+        try { await deleteTransaction(editInvoiceId); } catch(e) { console.error("Error deleting old invoice before save", e); }
+      }
+
       let type = 'sales';
       if (isQuotation) type = 'quotation';
       else if (isReturn) type = 'sales_return';
@@ -2148,16 +2154,7 @@ export function SalesInvoice() {
               <button 
                 onClick={() => {
                   setShowBarcodePrintModal(false);
-                  setRows([createEmptyRow()]);
-                  setSelectedCustomerId("");
-                  setCustomerInput("");
-                  setRemark("");
-                  setManualDiscPercent("");
-                  setManualDiscAmount("");
-                  setManualFreightAmt("");
-                  setManualFreightGst("");
-                  setManualTcsPercent("");
-                  setManualTcsAmt("");
+                  window.location.href = location.pathname;
                 }}
                 className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
               >

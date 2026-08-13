@@ -240,7 +240,26 @@ export function StockDetails() {
     printElement.style.color = 'black';
     
     try {
-      const canvas = await html2canvas(printElement, { scale: 2, useCORS: true });
+      const canvas = await html2canvas(printElement, { 
+        scale: 2, 
+        useCORS: true,
+        onclone: (clonedDoc) => {
+          const oklchRegex = /oklch\([^)]*\)/gi;
+          clonedDoc.querySelectorAll('*').forEach(el => {
+            if (el.style) {
+              ['color', 'backgroundColor', 'borderColor'].forEach(p => {
+                if (el.style[p] && oklchRegex.test(el.style[p])) el.style[p] = '#000000';
+              });
+              if (el.style.cssText && oklchRegex.test(el.style.cssText)) {
+                el.style.cssText = el.style.cssText.replace(oklchRegex, '#000000');
+              }
+            }
+          });
+          clonedDoc.querySelectorAll('style').forEach(tag => {
+            if (oklchRegex.test(tag.textContent)) tag.textContent = tag.textContent.replace(oklchRegex, '#000000');
+          });
+        }
+      });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
