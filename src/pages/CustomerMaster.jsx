@@ -192,7 +192,7 @@ export function CustomerMaster() {
   };
 
   const handleUpdate = async () => {
-    if (selectedRow) {
+    if (editData && editData.id) {
       try {
         const payload = {
           name: editData.customerName || editData.name,
@@ -214,9 +214,11 @@ export function CustomerMaster() {
           interestRate: parseFloat(editData.interestRate),
           loyaltyPoints: parseInt(editData.loyaltyPoints, 10),
           joiningDate: editData.joiningDate,
-
+          wholeParty: editData.wholeParty,
+          sezParty: editData.sezParty,
+          focParty: editData.focParty
         };
-        const res = await apiClient.put(`/customers/${selectedRow.id}`, payload);
+        const res = await apiClient.put(`/customers/${editData.id}`, payload);
         if (res.data.success) {
           fetchCustomers();
         }
