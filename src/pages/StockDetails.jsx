@@ -529,7 +529,7 @@ export function StockDetails() {
                       <div className="text-[12px] text-gray-500 mt-1 flex justify-end gap-3">
                         <span>HSN : <span className="font-bold text-[#007bff]">{item.hsnCode}</span> <span className="text-gray-300 mx-1">|</span></span>
                         <span>GST : <span className="font-bold text-gray-700">{item.tax || 0}</span> <span className="text-gray-300 mx-1">|</span></span>
-                        <span>TAXABLE : <span className="font-bold text-gray-700">{formatAmount((item.purchasePrice || 0) * (item.stock ?? item.qty ?? 0)).replace('₹', '')}</span></span>
+                        <span>TAXABLE : <span className="font-bold text-gray-700">{formatAmount(((item.purchasePrice || 0) * (item.stock ?? item.qty ?? 0)) / (1 + (item.tax || 0) / 100)).replace('₹', '')}</span></span>
                       </div>
                     </div>
                   </div>

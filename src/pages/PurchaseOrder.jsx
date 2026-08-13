@@ -720,7 +720,7 @@ export function PurchaseOrder() {
       d2Amt,
       finalAmount,
       totalDiscAmount: d1Amt + d2Amt,
-      totalQty: (Number(row.qty) || 0) + (Number(row.freeQty) || 0)
+      totalQty: (settings?.primaryOpeningQty ? (Number(row.primaryOpeningQty) || 0) : (Number(row.qty) || 0)) + (Number(row.freeQty) || 0)
     };
   };
 
@@ -1194,7 +1194,7 @@ export function PurchaseOrder() {
             
             <div className="summary-stats grid grid-cols-4 gap-2">
               <div className="border border-gray-200 bg-[#f8f9fa] rounded-[3px] p-2 flex flex-col items-center justify-center text-center">
-                <span className="text-[12px] font-bold text-gray-700">Total Qty (Inc. Free)</span>
+                <span className="text-[12px] font-bold text-gray-700">Total Qty</span>
                 <span className="text-[14px] font-bold text-[#007bff]">{grandTotalQty}</span>
               </div>
               <div className="border border-gray-200 bg-[#f8f9fa] rounded-[3px] p-2 flex flex-col items-center justify-center text-center">
@@ -1245,7 +1245,7 @@ export function PurchaseOrder() {
                      <span className="absolute -top-[18px] left-0 text-[11px] font-bold text-gray-800">Dis.%</span>
                      <div className="relative">
                        <input 
-                         type="text" 
+                         type="number" 
                          value={manualDiscPercent !== "" ? manualDiscPercent : ""}
                          placeholder="0"
                          onChange={(e) => {
@@ -1256,32 +1256,9 @@ export function PurchaseOrder() {
                              setManualDiscAmount('');
                            }
                          }}
-                         onFocus={() => setShowSummaryDiscDropdown(true)}
-                         onBlur={() => setTimeout(() => setShowSummaryDiscDropdown(false), 200)}
-                         className="w-full border border-gray-300 rounded-[3px] py-1 pl-2 pr-6 text-[13px] text-right text-blue-700 font-bold outline-none bg-white" 
+                         className="w-full border border-gray-300 rounded-[3px] py-1 px-2 text-[13px] text-right text-blue-700 font-bold outline-none bg-white" 
                        />
-                       <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600 text-[10px]">
-                         ▼
-                       </div>
                      </div>
-                     {showSummaryDiscDropdown && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-50 rounded-b-[3px] mt-[1px]">
-                          {[5, 12, 18, 28].map(val => (
-                            <div 
-                              key={val} 
-                              className="px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-center text-[13px] text-gray-800 font-bold border-b border-gray-100 last:border-0"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                setManualDiscPercent(val);
-                                setManualDiscAmount((grandBaseAmount * Number(val) / 100).toFixed(2));
-                                setShowSummaryDiscDropdown(false);
-                              }}
-                            >
-                              {val}
-                            </div>
-                          ))}
-                        </div>
-                     )}
                    </div>
                    <div className="flex-1 relative mt-[18px]">
                      <span className="absolute -top-[18px] left-0 text-[11px] font-bold text-gray-800">Dis. Amount</span>
