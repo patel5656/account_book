@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Download, ExternalLink, Share2, MessageCircle, Loader, X } from 'lucide-react';
 import apiClient from '../api/apiClient';
 import { exportToExcel } from '../utils/excelExport';
-
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 export function Gstr2Summary() {
   const navigate = useNavigate();
   const [period, setPeriod] = useState('This Month');
@@ -69,58 +70,105 @@ export function Gstr2Summary() {
     try {
       setLoading(true);
       
-      const gstrData = [];
-      const keys = [
-        { key: 'b2b', label: 'Taxable Sales' },
-        { key: 'reverseCharge', label: 'Reverse charge supplies' },
-        { key: 'b2cLarge', label: 'B2C(Large) Invoices - 5A, 5B' },
-        { key: 'b2cSmall', label: 'B2C(Small) Invoices - 7' },
-        { key: 'cdnr', label: 'Credit/Debit Notes(Registered) - 9B' },
-        { key: 'cdnur', label: 'Credit/Debit Notes(Unregistered) - 9B' },
-        { key: 'exports', label: 'Exports Invoices -6A' },
-        { key: 'nilRated', label: 'Nil Rated Supplies' },
-        { key: 'exempted', label: 'Exempted Supplies' },
-        { key: 'nonGst', label: 'Non-GST Supplies' },
-        { key: 'total', label: 'Total' },
-        { key: 'hsnB2b', label: 'HSN/SAC summary (b2b)' },
-        { key: 'hsnB2c', label: 'HSN/SAC summary (b2c)' }
-      ];
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('b2b');
 
-      keys.forEach(k => {
-        const row = data && data[k.key] ? data[k.key] : null;
-        gstrData.push({
-          particular: k.label,
-          count: row ? row.count : 0,
-          taxable: row ? row.taxable : 0,
-          igst: row ? row.igst : 0,
-          cgst: row ? row.cgst : 0,
-          sgst: row ? row.sgst : 0,
-          cess: row ? row.cess : 0,
-          taxAmt: row ? row.taxAmt : 0,
-          invoiceAmt: row ? row.invoiceAmt : 0
-        });
+      // Row 1
+      worksheet.mergeCells('A1:M1');
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'Summary For B2B, SEZ, DE (4A, 4B, 6B, 6C)';
+      titleCell.font = { name: 'Arial', size: 12, bold: true };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      // Calculate Summary
+      const b2bInvoices = data?.b2b?.invoices || [];
+      const uniqueRecipients = new Set(b2bInvoices.map(inv => inv.gstin)).size;
+      const totalInvoicesCount = b2bInvoices.length;
+      const totalInvoiceValue = b2bInvoices.reduce((sum, inv) => sum + (inv.invoiceValue || 0), 0);
+      const totalTaxableValue = b2bInvoices.reduce((sum, inv) => sum + (inv.taxableValue || 0), 0);
+      const totalCess = b2bInvoices.reduce((sum, inv) => sum + (inv.cessAmount || 0), 0);
+
+      // Row 2 Labels
+      worksheet.getCell('A2').value = 'No. of Recipients';
+      worksheet.getCell('A2').font = { bold: true };
+      worksheet.getCell('C2').value = 'No. of Invoice';
+      worksheet.getCell('C2').font = { bold: true };
+      worksheet.getCell('E2').value = 'Total Invoice';
+      worksheet.getCell('E2').font = { bold: true };
+      worksheet.getCell('L2').value = 'Total Taxable Value';
+      worksheet.getCell('L2').font = { bold: true };
+      worksheet.getCell('M2').value = 'Total Cess';
+      worksheet.getCell('M2').font = { bold: true };
+
+      // Row 3 Values
+      worksheet.getCell('A3').value = uniqueRecipients;
+      worksheet.getCell('C3').value = totalInvoicesCount;
+      worksheet.getCell('E3').value = totalInvoiceValue;
+      worksheet.getCell('E3').numFmt = '0.00';
+      worksheet.getCell('L3').value = totalTaxableValue;
+      worksheet.getCell('L3').numFmt = '0.00';
+      worksheet.getCell('M3').value = totalCess;
+      worksheet.getCell('M3').numFmt = '0.00';
+
+      // Row 4 Headers
+      const headers = [
+        'GSTIN/UIN of Recipient', 'Receiver Name', 'Invoice Number', 'Invoice date',
+        'Invoice Value', 'Place Of Supply', 'Reverse Charge', 'Applicable %',
+        'Invoice Type', 'E-Commerce GSTIN', 'GST Rate', 'Taxable Value', 'Cess Amount'
+      ];
+      const headerRow = worksheet.getRow(4);
+      headerRow.values = headers;
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
       });
 
-      const sheets = [
-        {
-          sheetName: 'GST Report',
-          title: `GSTR-2 Summary (${dateRangeStr})`,
-          headers: [
-            { key: 'particular', label: 'Particular', type: 'text', width: 40 },
-            { key: 'count', label: 'No. of Vouchers', type: 'number', width: 15 },
-            { key: 'taxable', label: 'Taxable Values', type: 'currency', width: 15 },
-            { key: 'igst', label: 'IGST', type: 'currency', width: 15 },
-            { key: 'cgst', label: 'CGST', type: 'currency', width: 15 },
-            { key: 'sgst', label: 'SGST', type: 'currency', width: 15 },
-            { key: 'cess', label: 'Cess', type: 'currency', width: 15 },
-            { key: 'taxAmt', label: 'Tax Amount', type: 'currency', width: 15 },
-            { key: 'invoiceAmt', label: 'Invoice Amount', type: 'currency', width: 20 }
-          ],
-          data: gstrData
+      // Data Rows (from Row 5)
+      b2bInvoices.forEach((inv, index) => {
+        const row = worksheet.getRow(5 + index);
+        row.getCell(1).value = inv.gstin || '';
+        row.getCell(2).value = inv.receiverName || '';
+        row.getCell(3).value = inv.invoiceNo || '';
+        
+        if (inv.invoiceDate) {
+           const d = new Date(inv.invoiceDate);
+           row.getCell(4).value = d;
+           row.getCell(4).numFmt = 'dd-mmm-yy';
         }
-      ];
 
-      await exportToExcel('Accounting_Report', sheets);
+        row.getCell(5).value = inv.invoiceValue || 0;
+        row.getCell(5).numFmt = '0.00';
+
+        row.getCell(6).value = inv.placeOfSupply || '';
+        row.getCell(7).value = inv.reverseCharge || 'N';
+        row.getCell(8).value = inv.applicablePercent || '';
+        row.getCell(9).value = inv.invoiceType || 'Regular B2B';
+        row.getCell(10).value = inv.ecommerceGstin || '';
+        
+        row.getCell(11).value = inv.gstRate || 0;
+        row.getCell(11).numFmt = '0.00';
+
+        row.getCell(12).value = inv.taxableValue || 0;
+        row.getCell(12).numFmt = '0.00';
+
+        row.getCell(13).value = inv.cessAmount || 0;
+        row.getCell(13).numFmt = '0.00';
+      });
+
+      // Auto fit columns
+      worksheet.columns.forEach((column, i) => {
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, cell => {
+          const columnLength = cell.value ? cell.value.toString().length : 10;
+          if (columnLength > maxLength) {
+            maxLength = columnLength;
+          }
+        });
+        column.width = maxLength < 15 ? 15 : maxLength + 2;
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      saveAs(new Blob([buffer]), `GSTR2_B2B_${dateRangeStr.replace(/ /g, '_')}.xlsx`);
+
       alert("Report Exported Successfully");
     } catch (err) {
       console.error("Export Failed", err);
@@ -297,7 +345,7 @@ export function Gstr2Summary() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-sm shadow-xl w-full max-w-[450px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
             {/* Header */}
-            <div className="bg-[#17a2b8] flex items-center justify-between pl-4 pr-1 py-1.5">
+            <div className="bg-[#4F46E5] flex items-center justify-between pl-4 pr-1 py-1.5">
               <h2 className="text-[15px] text-white font-medium">Select Date Range</h2>
               <button 
                 onClick={() => setIsCustomRangeModalOpen(false)}
@@ -462,7 +510,7 @@ export function Gstr2Summary() {
           {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Export to Json
         </button>
         <button 
-          onClick={handleExportCSV}
+          onClick={handleExportExcel}
           className="bg-[#ffc107] hover:bg-[#e0a800] text-gray-900 text-[13px] font-medium px-4 py-1.5 rounded-[3px] flex items-center justify-center gap-1.5 shadow-sm transition-colors">
           <Download className="w-4 h-4" /> Export
         </button>

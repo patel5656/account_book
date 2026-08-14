@@ -93,6 +93,7 @@ export function PurchaseInvoice() {
   const [isQuantityCalcOpen, setIsQuantityCalcOpen] = useState(false);
   const [activeQuantityRow, setActiveQuantityRow] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [editInvoiceId, setEditInvoiceId] = useState(null);
 
   useEffect(() => {
     if (selectedSupplierId) {
@@ -129,6 +130,7 @@ export function PurchaseInvoice() {
       const params = new URLSearchParams(location.search);
       const invoiceId = params.get('id');
       if (invoiceId) {
+        setEditInvoiceId(invoiceId);
         const invRes = await apiClient.get(`/inventory/single/${invoiceId}`);
         if (invRes.data?.success) {
           const inv = invRes.data.data;
@@ -308,26 +310,11 @@ export function PurchaseInvoice() {
     const product = products.find(p => p.id === parseInt(productId));
     if (!product) return;
 
-    if (settings?.negativeStockLock) {
-      if (1 > (product.stock || 0)) {
-        alert('Negative Stock Lock is enabled. Insufficient stock!');
-        return;
-      }
-    }
-
     // We identify a unique row by productId AND variant name (if present)
     const existingIndex = rows.findIndex((r, i) => i !== index && parseInt(r.productId) === product.id && r.variantName === (variant?.name || ""));
 
     if (existingIndex !== -1) {
       // Product already in list — increment its qty, reset current row to empty
-      if (settings?.negativeStockLock) {
-        const currentQty = Number(rows[existingIndex].qty) || 0;
-        if (currentQty + 1 > (product.stock || 0)) {
-          alert('Negative Stock Lock is enabled. Insufficient stock!');
-          return;
-        }
-      }
-      
       const newRows = [...rows];
       newRows[existingIndex] = { 
         ...newRows[existingIndex], 
@@ -381,17 +368,6 @@ export function PurchaseInvoice() {
   const [priceWarnings, setPriceWarnings] = useState({});
 
   const updateRow = (index, field, value) => {
-    if (settings?.negativeStockLock && ['qty', 'primaryOpeningQty', 'secOpeningQty'].includes(field)) {
-      const productId = rows[index].productId;
-      if (productId) {
-        const product = products.find(p => p.id === parseInt(productId));
-        if (product && Number(value) > (product.stock || 0)) {
-          alert('Negative Stock Lock is enabled. Insufficient stock!');
-          return;
-        }
-      }
-    }
-
     const newRows = [...rows];
     newRows[index][field] = value;
     
@@ -763,6 +739,9 @@ export function PurchaseInvoice() {
     };
 
     try {
+      if (editInvoiceId) {
+        await apiClient.delete(`/inventory/${editInvoiceId}`);
+      }
       const res = await apiClient.post(`/inventory/${transactionType}`, payload);
       if (res.data) {
         setIsPaymentStatusModalOpen(false);
@@ -951,7 +930,33 @@ export function PurchaseInvoice() {
                   onDelete={handleDeleteSupplier}
                 />
               </div>
-              <button title="Click here to view the Latest invoice of the selected party" onClick={() => alert("Click here to view the Latest invoice of the selected party")} className="bg-[#17a2b8] hover:bg-[#138496] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-center shadow-sm h-[32px] transition-colors">
+              <button 
+                title="Click here to view the Latest invoice items of the selected party" 
+                onClick={async () => {
+                  if (!selectedSupplierId) {
+                    alert("Please select a party first.");
+                    return;
+                  }
+                  try {
+                    const res = await apiClient.get(`/inventory/purchase?customerId=${selectedSupplierId}`);
+                    if (res.data.data && res.data.data.length > 0) {
+                      const latestInvoice = res.data.data[0];
+                      if (latestInvoice.items && latestInvoice.items.length > 0) {
+                        const itemNames = latestInvoice.items.map(item => `${item.product?.name || 'Unknown'} (Qty: ${item.quantity || 0})`).join('\n');
+                        alert(`Latest Invoice Items:\n\n${itemNames}`);
+                      } else {
+                        alert("The latest invoice has no items.");
+                      }
+                    } else {
+                      alert("No previous invoice found for this party.");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed to fetch latest invoice.");
+                  }
+                }}
+                className="bg-[#17a2b8] hover:bg-[#138496] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-center shadow-sm h-[32px] transition-colors"
+              >
                 <Search className="w-4 h-4" strokeWidth={3} />
               </button>
               <button 
@@ -1747,6 +1752,7 @@ export function PurchaseInvoice() {
               <button 
                 onClick={() => {
                   setShowBarcodePrintModal(false);
+                  window.location.href = location.pathname;
                 }}
                 className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
               >

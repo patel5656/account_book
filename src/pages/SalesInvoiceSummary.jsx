@@ -53,6 +53,7 @@ export function SalesInvoiceSummary() {
   const [isToggleOn, setIsToggleOn] = useState(false);
   const [salesData, setSalesData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
 
   const handleCollectionPeriodChange = (period) => {
     setCollectionPeriod(period);
@@ -141,6 +142,19 @@ export function SalesInvoiceSummary() {
         console.error("Failed to delete invoice", error);
         alert("Failed to delete invoice");
       }
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedInvoices.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedInvoices.length} selected invoice(s)?`)) return;
+    try {
+      await Promise.all(selectedInvoices.map(id => deleteTransaction(id)));
+      setSelectedInvoices([]);
+      setSalesData(prevData => prevData.filter(item => !selectedInvoices.includes(item.id)));
+    } catch (error) {
+      console.error("Failed to delete some or all selected invoices", error);
+      alert("Failed to delete some or all selected invoices");
     }
   };
 
@@ -383,6 +397,31 @@ export function SalesInvoiceSummary() {
 
         {/* Main list body */}
         <div className="flex-1 bg-[#f0f2f5] overflow-auto p-3 flex flex-col gap-3">
+          {filteredData.length > 0 && (
+            <div className="flex items-center justify-between bg-white p-2 rounded-[6px] shadow-sm border border-gray-200 shrink-0">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  checked={selectedInvoices.length > 0 && selectedInvoices.length === filteredData.length}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedInvoices(filteredData.map(inv => inv.id));
+                    else setSelectedInvoices([]);
+                  }}
+                  className="w-4 h-4 cursor-pointer rounded-[2px]"
+                />
+                <span className="text-[13px] font-medium text-gray-700">Select All</span>
+              </div>
+              {selectedInvoices.length > 0 && (
+                <button 
+                  onClick={handleBulkDelete}
+                  className="bg-[#dc3545] hover:bg-[#c82333] text-white px-3 py-1.5 rounded-[4px] text-[13px] font-medium flex items-center gap-1.5 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete Selected ({selectedInvoices.length})
+                </button>
+              )}
+            </div>
+          )}
+
           {filteredData.length > 0 ? (
             filteredData.map((row, index) => (
               <div key={row.id} className="bg-white rounded-[6px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] border border-gray-200 flex flex-col">
@@ -391,7 +430,15 @@ export function SalesInvoiceSummary() {
                   <div className="flex justify-between items-start mb-1.5">
                     <div className="flex items-center gap-1">
                       <span className="text-[14px] font-bold text-gray-800">{index + 1}.</span>
-                      <input type="checkbox" className="w-[13px] h-[13px] border-gray-300 rounded-[2px] outline-none cursor-pointer mx-0.5" />
+                      <input 
+                        type="checkbox" 
+                        checked={selectedInvoices.includes(row.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedInvoices(prev => [...prev, row.id]);
+                          else setSelectedInvoices(prev => prev.filter(id => id !== row.id));
+                        }}
+                        className="w-[13px] h-[13px] border-gray-300 rounded-[2px] outline-none cursor-pointer mx-0.5" 
+                      />
                       <span className="text-[12px] text-gray-500">#Invoice No : {row.invoiceId}</span>
                     </div>
                     <span className="text-[12px] text-gray-500">{formatDisplayDate(row.date)}</span>
@@ -774,7 +821,7 @@ export function SalesInvoiceSummary() {
       {collectionCustomRangeOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[4px] shadow-xl w-full max-w-sm overflow-hidden flex flex-col">
-            <div className="bg-[#007bff] px-4 py-3 flex items-center justify-between">
+            <div className="bg-[#4F46E5] px-4 py-3 flex items-center justify-between">
               <h3 className="text-white font-medium text-[16px]">Select Date Range</h3>
               <button onClick={() => setCollectionCustomRangeOpen(false)} className="text-white hover:text-red-200 transition-colors">
                 <X className="w-5 h-5 font-bold" strokeWidth={3} />

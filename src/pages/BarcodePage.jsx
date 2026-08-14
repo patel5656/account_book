@@ -1441,8 +1441,8 @@ export function BarcodePage() {
         {`
           @media print {
             @page {
-              size: ${(activeTemplate?.barcodeFormat === 'Thermal Roll' || printerType === 'Thermal Roll') ? `${(parseInt(activeTemplate?.labelsInRow || labelCount) > 1 && (activeTemplate?.pageWidth || pageWidth || '50mm') === '50mm') ? '78mm' : (activeTemplate?.pageWidth || pageWidth || '50mm')} ${activeTemplate?.pageHeight || pageHeight || '25mm'}` : (parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? 'A4 portrait' : `${activeTemplate?.pageWidth || pageWidth || '50mm'} ${activeTemplate?.pageHeight || pageHeight || '25mm'}`)};
-              margin: ${(activeTemplate?.barcodeFormat === 'Thermal Roll' || printerType === 'Thermal Roll') ? `${activeTemplate?.marginTop || '0mm'} ${activeTemplate?.marginRight || '0mm'} ${activeTemplate?.marginBottom || '0mm'} ${activeTemplate?.marginLeft || '0mm'}` : (parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? '10mm 8mm' : `${activeTemplate?.marginTop || '0mm'} ${activeTemplate?.marginRight || '0mm'} ${activeTemplate?.marginBottom || '0mm'} ${activeTemplate?.marginLeft || '0mm'}`)};
+              size: ${(activeTemplate?.barcodeFormat === 'Thermal Roll' || printerType === 'Thermal Roll') ? `${(parseInt(activeTemplate?.labelsInRow || labelCount) > 1 && (activeTemplate?.pageWidth || pageWidth || '50mm') === '50mm') ? '78mm' : (activeTemplate?.pageWidth || pageWidth || '50mm')} ${activeTemplate?.pageHeight || pageHeight || '25mm'}` : 'A4 portrait'};
+              margin: ${(activeTemplate?.barcodeFormat === 'Thermal Roll' || printerType === 'Thermal Roll') ? '0mm' : '10mm 8mm'};
             }
             html, body, #root {
               margin: 0 !important;
@@ -1460,7 +1460,7 @@ export function BarcodePage() {
               width: 100%;
               display: ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? 'grid' : 'flex'};
               ${parseInt(activeTemplate?.labelsInRow || labelCount) > 1 ? `grid-template-columns: repeat(${parseInt(activeTemplate?.labelsInRow || labelCount)}, 1fr);` : 'flex-wrap: wrap;'}
-              gap: ${activeTemplate?.labelGap || labelGap || '2mm'} ${activeTemplate?.heightGap || heightGap || '2mm'};
+              gap: ${activeTemplate?.heightGap || heightGap || '2mm'} ${activeTemplate?.labelGap || labelGap || '2mm'};
               padding: 0;
               margin: 0;
               box-sizing: border-box;

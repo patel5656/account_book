@@ -9,11 +9,15 @@ export function useGlobalShortcuts() {
       // Ignore if user is typing in an input (except for modifiers or function keys if needed)
       const isInputFocused = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
 
-      // Shift + ? -> Global Search
-      if (e.shiftKey && e.key === '?' && !isInputFocused) {
-        // Not implemented yet or just focus search if it exists
+      // Esc -> Go Back
+      if (e.key === 'Escape') {
+        // Only navigate back if we aren't typing in an input field 
+        // to avoid conflicting with input-clearing or modal-closing behavior
+        if (!isInputFocused) {
+          e.preventDefault();
+          navigate(-1);
+        }
       }
-      
       // Ctrl + S -> Credit Invoice (Sales Invoice)
       if (e.ctrlKey && e.key.toLowerCase() === 's' && !e.shiftKey && !e.altKey) {
         e.preventDefault();

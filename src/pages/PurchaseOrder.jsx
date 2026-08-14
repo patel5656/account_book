@@ -49,6 +49,7 @@ export function PurchaseOrder() {
   const [products, setProducts] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
+  const [isTaxIncluded, setIsTaxIncluded] = useState(false); // Default to false since UI showed EXCLUDED previously
   const [paymentMode, setPaymentMode] = useState('Credit');
   const [showConvertDropdown, setShowConvertDropdown] = useState(false);
   const [dateFilter, setDateFilter] = useState('Today');
@@ -87,6 +88,7 @@ export function PurchaseOrder() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [editInvoiceId, setEditInvoiceId] = useState(null);
 
   useEffect(() => {
     const init = async () => {
@@ -94,6 +96,7 @@ export function PurchaseOrder() {
       const params = new URLSearchParams(location.search);
       const invoiceId = params.get('id');
       if (invoiceId) {
+        setEditInvoiceId(invoiceId);
         try {
           const invRes = await apiClient.get(`/inventory/single/${invoiceId}`);
           if (invRes.data?.success) {
@@ -260,6 +263,7 @@ export function PurchaseOrder() {
     const payload = {
       customerId: selectedCustomerId,
       date: invoiceDate,
+      invoiceNo: searchInvoiceNo || undefined,
       paymentMode,
       remark: 'Purchase Order',
       subTotal: grandBaseAmount,
@@ -273,6 +277,9 @@ export function PurchaseOrder() {
     };
 
     try {
+      if (editInvoiceId) {
+        await apiClient.delete(`/inventory/${editInvoiceId}`);
+      }
       await apiClient.post('/inventory/PURCHASE_ORDER', payload);
       alert('Purchase Order Saved Successfully!');
       setIsPaymentStatusModalOpen(false);
@@ -503,15 +510,6 @@ export function PurchaseOrder() {
     // We identify a unique row by productId AND variant name (if present)
     const existingIndex = newRows.findIndex((r, i) => i !== index && r.productId === parseInt(productId) && r.variantName === (variant?.name || ""));
     if (existingIndex !== -1) {
-      if (settings?.negativeStockLock) {
-        const product = products.find(p => p.id === parseInt(productId));
-        const currentQty = Number(newRows[existingIndex].qty) || 0;
-        if (product && currentQty + 1 > (product.stock || 0)) {
-          alert('Negative Stock Lock is enabled. Insufficient stock!');
-          return;
-        }
-      }
-      
       newRows[existingIndex] = {
         ...newRows[existingIndex],
         qty: (Number(newRows[existingIndex].qty) || 0) + 1,
@@ -525,13 +523,6 @@ export function PurchaseOrder() {
 
     const product = products.find(p => p.id === parseInt(productId));
     if (product) {
-      if (settings?.negativeStockLock) {
-        if (1 > (product.stock || 0)) {
-          alert('Negative Stock Lock is enabled. Insufficient stock!');
-          return;
-        }
-      }
-
       let pMRP = product.mrp || 0;
       let pPrice = product.purchasePrice || product.price || 0;
 
@@ -572,17 +563,6 @@ export function PurchaseOrder() {
   };
 
   const updateRow = (index, field, value) => {
-    if (settings?.negativeStockLock && ['qty', 'primaryOpeningQty', 'secOpeningQty'].includes(field)) {
-      const productId = rows[index].productId;
-      if (productId) {
-        const product = products.find(p => p.id === parseInt(productId));
-        if (product && Number(value) > (product.stock || 0)) {
-          alert('Negative Stock Lock is enabled. Insufficient stock!');
-          return;
-        }
-      }
-    }
-
     const newRows = [...rows];
     newRows[index][field] = value;
 
@@ -713,6 +693,16 @@ export function PurchaseOrder() {
     let d2Amt = row.disc2Type === '%' ? amountAfterD1 * ((row.disc2 || 0) / 100) : (row.disc2 || 0);
     const finalAmount = Math.max(0, amountAfterD1 - d2Amt);
 
+    const gstRate = Number(row.gstRate) || Number(row.taxRate) || 0;
+    let gstAmount = 0;
+    if (isTaxIncluded) {
+      gstAmount = finalAmount - (finalAmount / (1 + gstRate / 100));
+    } else {
+      gstAmount = finalAmount * (gstRate / 100);
+    }
+    const cgst = gstAmount / 2;
+    const sgst = gstAmount / 2;
+
     return {
       calcQty,
       baseAmount,
@@ -720,20 +710,28 @@ export function PurchaseOrder() {
       d2Amt,
       finalAmount,
       totalDiscAmount: d1Amt + d2Amt,
-      totalQty: (settings?.primaryOpeningQty ? (Number(row.primaryOpeningQty) || 0) : (Number(row.qty) || 0)) + (Number(row.freeQty) || 0)
+      totalQty: (settings?.primaryOpeningQty ? (Number(row.primaryOpeningQty) || 0) : (Number(row.qty) || 0)) + (Number(row.freeQty) || 0),
+      gstRate,
+      gstAmount,
+      cgst,
+      sgst
     };
   };
 
   const grandBaseAmount = rows.reduce((sum, r) => sum + calculateRowAmount(r).baseAmount, 0);
   const grandTotalDiscAmount = rows.reduce((sum, r) => sum + calculateRowAmount(r).totalDiscAmount, 0);
   const grandTotalQty = rows.reduce((sum, r) => sum + calculateRowAmount(r).totalQty, 0);
+  const totalGstAmount = rows.reduce((sum, r) => sum + calculateRowAmount(r).gstAmount, 0);
+  const totalCgst = rows.reduce((sum, r) => sum + calculateRowAmount(r).cgst, 0);
+  const totalSgst = rows.reduce((sum, r) => sum + calculateRowAmount(r).sgst, 0);
 
   const appliedDiscAmount = (manualDiscAmount !== "" && !settings?.hideTotalDiscount) ? Number(manualDiscAmount) : (settings?.showDiscount !== false ? grandTotalDiscAmount : 0);
   const totalFreight = !settings?.hideFreightCharge ? ((parseFloat(manualFreightAmt) || 0) + (parseFloat(manualFreightAmt) || 0) * (parseFloat(manualFreightGst) || 0) / 100) : 0;
   
-  const amountBeforeTcs = Math.max(0, grandBaseAmount - appliedDiscAmount) + totalFreight;
+  const amountBeforeTcs = Math.max(0, grandBaseAmount - appliedDiscAmount) + totalFreight + (isTaxIncluded ? 0 : totalGstAmount);
   const tcsAmount = manualTcsAmount !== "" ? Number(manualTcsAmount) : 0;
   const grandFinalAmount = amountBeforeTcs + tcsAmount;
+
 
   const allColumnIds = [
     'sno', 'productCode', 'brand', 'product', 'batch', 'qty',
@@ -853,7 +851,33 @@ export function PurchaseOrder() {
                   onDelete={handleDeleteSupplier}
                 />
               </div>
-              <button title="Click here to view the Latest invoice of the selected party" onClick={() => alert("Click here to view the Latest invoice of the selected party")} className="bg-[#17a2b8] hover:bg-[#138496] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-center shadow-sm h-[32px] transition-colors">
+              <button 
+                title="Click here to view the Latest invoice items of the selected party" 
+                onClick={async () => {
+                  if (!selectedCustomerId) {
+                    alert("Please select a party first.");
+                    return;
+                  }
+                  try {
+                    const res = await apiClient.get(`/inventory/purchase_order?customerId=${selectedCustomerId}`);
+                    if (res.data.data && res.data.data.length > 0) {
+                      const latestInvoice = res.data.data[0];
+                      if (latestInvoice.items && latestInvoice.items.length > 0) {
+                        const itemNames = latestInvoice.items.map(item => `${item.product?.name || 'Unknown'} (Qty: ${item.quantity || 0})`).join('\n');
+                        alert(`Latest Invoice Items:\n\n${itemNames}`);
+                      } else {
+                        alert("The latest invoice has no items.");
+                      }
+                    } else {
+                      alert("No previous invoice found for this party.");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed to fetch latest invoice.");
+                  }
+                }}
+                className="bg-[#17a2b8] hover:bg-[#138496] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-center shadow-sm h-[32px] transition-colors"
+              >
                 <Search className="w-4 h-4" strokeWidth={3} />
               </button>
               <button 
@@ -965,10 +989,13 @@ export function PurchaseOrder() {
                   case 'mrp': return <div key={colId} {...dragProps} className={dragProps.className.replace('flex-col', 'items-center justify-center')}>MRP</div>;
                   case 'price': return (
                     <div key={colId} {...dragProps}>
-                      <span className="font-normal text-[10px] pointer-events-none">(TAX EXCLUDED)</span>
-                      <div className="flex items-center justify-center gap-1 mt-0.5 pointer-events-none">
-                        <div className="w-[20px] h-[10px] bg-[#117a8b] rounded-full relative">
-                          <div className="w-[8px] h-[8px] bg-white rounded-full absolute top-[1px] left-[1px]"></div>
+                      <span className="font-normal text-[10px] pointer-events-none">(TAX {isTaxIncluded ? 'INCLUDED' : 'EXCLUDED'})</span>
+                      <div 
+                        onClick={(e) => { e.stopPropagation(); setIsTaxIncluded(!isTaxIncluded); }}
+                        className="flex items-center justify-center gap-1 mt-0.5 cursor-pointer pointer-events-auto"
+                      >
+                        <div className={`w-[24px] h-[14px] rounded-full relative transition-colors ${isTaxIncluded ? 'bg-[#117a8b]' : 'bg-gray-400'}`}>
+                          <div className={`w-[10px] h-[10px] bg-white rounded-full absolute top-[2px] transition-all shadow-sm ${isTaxIncluded ? 'right-[2px]' : 'left-[2px]'}`}></div>
                         </div>
                         PRICE
                       </div>
@@ -1203,11 +1230,11 @@ export function PurchaseOrder() {
               </div>
               <div className="border border-gray-200 bg-[#f8f9fa] rounded-[3px] p-2 flex flex-col items-center justify-center text-center">
                 <span className="text-[12px] font-bold text-gray-700">CGST</span>
-                <span className="text-[14px] font-bold text-[#007bff]">0</span>
+                <span className="text-[14px] font-bold text-[#007bff]">{formatAmount(totalCgst)}</span>
               </div>
               <div className="border border-gray-200 bg-[#f8f9fa] rounded-[3px] p-2 flex flex-col items-center justify-center text-center">
                 <span className="text-[12px] font-bold text-gray-700">SGST</span>
-                <span className="text-[14px] font-bold text-[#007bff]">0</span>
+                <span className="text-[14px] font-bold text-[#007bff]">{formatAmount(totalSgst)}</span>
               </div>
             </div>
 
@@ -1654,7 +1681,7 @@ export function PurchaseOrder() {
               <button 
                 onClick={() => {
                   setShowBarcodePrintModal(false);
-                  navigate('/admin/invoice-details/company_purchase_order');
+                  window.location.href = location.pathname;
                 }}
                 className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
               >

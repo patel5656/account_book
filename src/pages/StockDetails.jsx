@@ -194,10 +194,16 @@ export function StockDetails() {
     setShowConfirm(true);
   };
 
-  const executeBulkAction = () => {
+  const executeBulkAction = async () => {
     setShowConfirm(false);
     if (confirmAction === 'delete') {
-      setRows(prev => prev.filter(r => !selected.has(r.id)));
+      try {
+        await Promise.all(Array.from(selected).map(id => apiClient.delete(`/products/${id}`)));
+        setRows(prev => prev.filter(r => !selected.has(r.id)));
+      } catch (err) {
+        console.error("Failed to delete some items", err);
+        alert("Failed to delete some items.");
+      }
     } else if (confirmAction === 'activate') {
       setRows(prev => prev.map(r => selected.has(r.id) ? { ...r, status: 'Active' } : r));
     } else if (confirmAction === 'deactivate') {
@@ -240,7 +246,26 @@ export function StockDetails() {
     printElement.style.color = 'black';
     
     try {
-      const canvas = await html2canvas(printElement, { scale: 2, useCORS: true });
+      const canvas = await html2canvas(printElement, { 
+        scale: 2, 
+        useCORS: true,
+        onclone: (clonedDoc) => {
+          const oklchRegex = /oklch\([^)]*\)/gi;
+          clonedDoc.querySelectorAll('*').forEach(el => {
+            if (el.style) {
+              ['color', 'backgroundColor', 'borderColor'].forEach(p => {
+                if (el.style[p] && oklchRegex.test(el.style[p])) el.style[p] = '#000000';
+              });
+              if (el.style.cssText && oklchRegex.test(el.style.cssText)) {
+                el.style.cssText = el.style.cssText.replace(oklchRegex, '#000000');
+              }
+            }
+          });
+          clonedDoc.querySelectorAll('style').forEach(tag => {
+            if (oklchRegex.test(tag.textContent)) tag.textContent = tag.textContent.replace(oklchRegex, '#000000');
+          });
+        }
+      });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -499,18 +524,50 @@ export function StockDetails() {
           {/* Main Content Area - Cards */}
           <div className="flex-1 overflow-y-auto bg-white p-4">
             <div className="max-w-[1200px] mx-auto flex flex-col gap-4">
+              {filtered.length > 0 && (
+                <div className="flex items-center gap-2 bg-white p-2 rounded-[5px] shadow-sm border border-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={allSelected && filtered.length > 0}
+                    onChange={toggleAll}
+                    className="w-4 h-4 cursor-pointer rounded-sm"
+                  />
+                  <span className="text-[13px] font-medium text-gray-700">Select All</span>
+                  {selectedCount > 0 && (
+                    <>
+                      <button
+                        onClick={() => triggerBulkAction('delete')}
+                        className="bg-[#dc3545] hover:bg-[#c82333] text-white px-3 py-1.5 rounded-[4px] text-[13px] font-medium flex items-center gap-1.5 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete ({selectedCount})
+                      </button>
+                      <button
+                        onClick={() => setSelected(new Set())}
+                        className="bg-[#6c757d] hover:bg-[#5a6268] text-white px-3 py-1.5 rounded-[4px] text-[13px] font-medium transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               {filtered.map((item, index) => (
                 <div key={item.id} className="border border-gray-200 rounded-[6px] p-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
                     <div className="flex gap-2">
-                      <input type="checkbox" className="mt-1 w-4 h-4" />
+                      <input 
+                        type="checkbox" 
+                        className="mt-1 w-4 h-4 cursor-pointer" 
+                        checked={selected.has(item.id)} 
+                        onChange={() => toggleRow(item.id)} 
+                      />
                       <div>
                         <div className="text-[15px] text-gray-800">
                           <span className="font-bold">#{index + 1}. {item.name}</span> - <span className="text-[#28a745] font-bold">{item.category}</span>
                         </div>
                         <div className="flex items-center gap-3 mt-2 text-[12px] text-gray-600">
-                          <span>Sale Price : <span className="text-[#28a745] border border-[#28a745] px-1.5 py-0.5 rounded font-bold">{item.price} / {item.baseUnit?.toLowerCase()}</span></span>
-                          <span>MRP : <span className="border border-gray-300 px-1.5 py-0.5 rounded text-gray-700">{item.mrp} / {item.baseUnit?.toLowerCase()}</span></span>
+                          <span>Sale Price : <span className="text-[#28a745] border border-[#28a745] px-1.5 py-0.5 rounded font-bold">{item.price} / {item.baseUnit?.toUpperCase()}</span></span>
+                          <span>MRP : <span className="border border-gray-300 px-1.5 py-0.5 rounded text-gray-700">{item.mrp} / {item.baseUnit?.toUpperCase()}</span></span>
                         </div>
                         <div className="text-[12px] text-gray-500 mt-1">Barcodes : [{item.sku}]</div>
                       </div>
@@ -519,7 +576,7 @@ export function StockDetails() {
                     <div className="text-right">
                       <div className="text-[13px] text-gray-600 flex justify-end items-center gap-1">
                         {(item.qty != null || item.stock != null) && (
-                          <>P.QTY : <span className="font-bold text-gray-800">{item.stock ?? item.qty} {item.baseUnit?.toLowerCase() || item.purchaseUnit}</span> <span className="text-gray-300 mx-1">|</span> </>
+                          <>P.QTY : <span className="font-bold text-gray-800">{item.stock ?? item.qty} {item.baseUnit?.toUpperCase() || item.purchaseUnit?.toUpperCase()}</span> <span className="text-gray-300 mx-1">|</span> </>
                         )}
                         value : <span className="font-bold text-gray-800">{formatAmount((item.purchasePrice || 0) * (item.stock ?? item.qty ?? 0)).replace('₹', '')}</span>
                       </div>

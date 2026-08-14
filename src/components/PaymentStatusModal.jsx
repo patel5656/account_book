@@ -67,30 +67,14 @@ export function PaymentStatusModal({ isOpen, onClose, totalAmount = 0, dueAmount
   const fetchBanks = async () => {
     try {
       const res = await apiClient.get('/banks');
-      if (res.data?.success && res.data.data && res.data.data.length > 0) {
-        let fetchedBanks = [...res.data.data];
-        const hasOtherAccount = fetchedBanks.some(b => b.name.toLowerCase() === 'other account');
-        if (!hasOtherAccount) {
-          fetchedBanks.push({ id: 9999, name: 'other account', type: 'NON-PAYMENT BOOK', balance: -32900 });
-        }
-        setBanks(fetchedBanks);
+      if (res.data?.success && res.data.data) {
+        setBanks(res.data.data);
       } else {
-        setBanks([
-          { id: 1, name: 'Cash Account', type: 'CASH BOOK', balance: -205551 },
-          { id: 2, name: 'PHONE PAY', type: 'BANK BOOK', balance: 0 },
-          { id: 3, name: 'UPI', type: 'BANK BOOK', balance: 10900 },
-          { id: 4, name: 'other account', type: 'NON-PAYMENT BOOK', balance: -32900 },
-        ]);
+        setBanks([]);
       }
     } catch (err) {
       console.error('Failed to fetch banks:', err);
-      // Fallback defaults if DB is empty
-      setBanks([
-        { id: 1, name: 'Cash Account', type: 'CASH BOOK', balance: -205551 },
-        { id: 2, name: 'PHONE PAY', type: 'BANK BOOK', balance: 0 },
-        { id: 3, name: 'UPI', type: 'BANK BOOK', balance: 10900 },
-        { id: 4, name: 'other account', type: 'NON-PAYMENT BOOK', balance: -32900 },
-      ]);
+      setBanks([]);
     }
   };
 
@@ -98,10 +82,6 @@ export function PaymentStatusModal({ isOpen, onClose, totalAmount = 0, dueAmount
 
   const handleEditBank = async (bank, e) => {
     e.stopPropagation();
-    if (bank.id === 9999) {
-      alert("Cannot edit default fallback account.");
-      return;
-    }
     const newName = window.prompt("Edit Bank Name:", bank.name);
     if (!newName || newName === bank.name) return;
     try {
@@ -117,10 +97,6 @@ export function PaymentStatusModal({ isOpen, onClose, totalAmount = 0, dueAmount
 
   const handleDeleteBank = async (bankId, e) => {
     e.stopPropagation();
-    if (bankId === 9999) {
-      alert("Cannot delete default fallback account.");
-      return;
-    }
     const confirmDelete = window.confirm("Are you sure you want to delete this bank?");
     if (!confirmDelete) return;
     try {

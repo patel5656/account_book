@@ -256,3 +256,38 @@ body {
   box-shadow: none !important;
 }
 
+/* ── Print Styles ── */
+@media print {
+  /* Hide non-printable elements */
+  header,
+  aside,
+  nav,
+  .fixed,
+  button,
+  .footer-btns {
+    display: none !important;
+  }
+  
+  /* Reset background colors and constraints */
+  body, .bg-\[\#FAFAFA\], .min-h-screen {
+    background-color: white !important;
+    min-height: auto !important;
+  }
+  
+  /* Reset main layout margins and padding */
+  main {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  
+  .md\:ml-\[220px\],
+  .md\:ml-\[56px\] {
+    margin-left: 0 !important;
+  }
+  
+  .flex-1 {
+    min-width: 100% !important;
+  }
+}
