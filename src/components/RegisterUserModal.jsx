@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, User, Lock, Building2, Wallet, Loader } from 'lucide-react';
 import apiClient from '../api/apiClient';
+import { UserRoleMasterModal } from './UserRoleMasterModal';
 
 export function RegisterUserModal({ isOpen, onClose }) {
   const [name, setName] = useState('');
@@ -15,6 +16,13 @@ export function RegisterUserModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Dropdown & Role master states
+  const [availableRoles, setAvailableRoles] = useState(['ADMIN', 'Staff']);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [isRoleMasterOpen, setIsRoleMasterOpen] = useState(false);
+  const [typedRole, setTypedRole] = useState('');
+  const [userPermissions, setUserPermissions] = useState(null);
 
   if (!isOpen) return null;
 
@@ -36,10 +44,11 @@ export function RegisterUserModal({ isOpen, onClose }) {
       const res = await apiClient.post('/auth/register-sub-user', {
         name,
         password,
-        role: role === 'Admin' ? 'COMPANY_ADMIN' : 'STAFF',
+        role: role === 'Admin' || role === 'ADMIN' ? 'COMPANY_ADMIN' : 'STAFF',
         allowFirms: selectedFirms,
         stores: store ? [store] : [],
-        books: book ? [book] : []
+        books: book ? [book] : [],
+        customPermissions: userPermissions // Safely passed to backend metadata
       });
 
       if (res.data.success) {
@@ -67,6 +76,28 @@ export function RegisterUserModal({ isOpen, onClose }) {
     setSuccess('');
     onClose();
   };
+
+  const handleAddRoleClick = (newRole) => {
+    setTypedRole(newRole);
+    setIsRoleMasterOpen(true);
+    setShowRoleDropdown(false);
+  };
+
+  const handleRoleSave = (roleName, permissions) => {
+    // Add the role to the list of roles and select it
+    if (!availableRoles.some(r => r.toUpperCase() === roleName.toUpperCase())) {
+      setAvailableRoles([...availableRoles, roleName]);
+    }
+    setRole(roleName);
+    setUserPermissions(permissions);
+    setIsRoleMasterOpen(false);
+  };
+
+  const filteredRoles = availableRoles.filter(r =>
+    r.toLowerCase().includes(role.toLowerCase())
+  );
+
+  const exactMatch = availableRoles.some(r => r.toLowerCase() === role.toLowerCase());
 
   return (
     <div 
@@ -124,26 +155,53 @@ export function RegisterUserModal({ isOpen, onClose }) {
               </div>
               
               {/* User Role */}
-              <div>
+              <div className="relative">
                 <label className="block text-[13px] font-bold text-gray-700 mb-1">User Role</label>
                 <div className="relative">
                   <input 
                     type="text" 
                     value={role}
-                    onChange={e => setRole(e.target.value)}
-                    list="roleList"
+                    onChange={e => {
+                      setRole(e.target.value);
+                      setShowRoleDropdown(true);
+                    }}
+                    onFocus={() => setShowRoleDropdown(true)}
                     placeholder="Select Role" 
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] text-gray-600 focus:outline-none focus:border-[#4F46E5] bg-white" 
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] text-gray-600 focus:outline-none focus:border-[#4F46E5] bg-white pr-8" 
                   />
-                  <datalist id="roleList">
-                    <option value="Admin" />
-                    <option value="Staff" />
-                  </datalist>
-                  <div className="absolute right-3 top-0 bottom-0 flex items-center pointer-events-none text-gray-400">
+                  <div 
+                    onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+                    className="absolute right-3 top-0 bottom-0 flex items-center cursor-pointer text-gray-400"
+                  >
                     ▼
                   </div>
                 </div>
+                {showRoleDropdown && (
+                  <div className="absolute left-0 right-0 z-50 mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-y-auto text-[14px]">
+                    {filteredRoles.map(r => (
+                      <div
+                        key={r}
+                        onClick={() => {
+                          setRole(r);
+                          setShowRoleDropdown(false);
+                        }}
+                        className="px-3 py-2 hover:bg-teal-50 hover:text-teal-900 cursor-pointer font-semibold text-gray-700"
+                      >
+                        {r}
+                      </div>
+                    ))}
+                    {!exactMatch && role.trim().length > 0 && (
+                      <div
+                        onClick={() => handleAddRoleClick(role)}
+                        className="px-3 py-2 hover:bg-teal-50 hover:text-teal-900 cursor-pointer text-blue-600 font-bold border-t border-gray-100"
+                      >
+                        +Add "{role}"
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+
 
               {/* Password */}
               <div>
@@ -300,6 +358,12 @@ export function RegisterUserModal({ isOpen, onClose }) {
           </button>
         </div>
       </div>
+      <UserRoleMasterModal
+        isOpen={isRoleMasterOpen}
+        onClose={() => setIsRoleMasterOpen(false)}
+        defaultRoleName={typedRole}
+        onSave={handleRoleSave}
+      />
     </div>
   );
 }

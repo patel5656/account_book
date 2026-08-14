@@ -273,10 +273,37 @@ export function Sidebar({ isOpen, onClose }) {
     setOpenSubmenus(prev => ({ ...prev, [name]: !prev[name] }));
   };
 
-  // Compute dynamic menu items based on settings
+  // Retrieve user permissions dynamically from local storage user profile
+  let userPerms = null;
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    if (storedUser && storedUser.notificationPermissions && storedUser.notificationPermissions.customPermissions) {
+      userPerms = storedUser.notificationPermissions.customPermissions;
+    }
+  } catch (e) {
+    // Ignore error
+  }
+
+  // Compute dynamic menu items based on settings & custom permissions
   const displayMenuItems = menuItems.map(item => {
+    // 1. If user permissions exist, check if this parent menu item has View permission
+    // For tabs, let's normalize check key
+    let menuKey = item.name;
+    if (menuKey === 'Masters') menuKey = 'Masters';
+    if (menuKey === 'Settings') menuKey = 'Settings';
+    if (menuKey === "GSTR's Summary") menuKey = "GSTR's Summary";
+
+    // Submenu names inside userPerms are keyed by their exact submenu names (e.g. 'Customer Master')
+    // If it is a main item without a submenu (like POS Billing, Bill Book, Dashboard, Audit Logs), check directly
+    if (!item.hasSubmenu || !item.subitems) {
+      if (userPerms) {
+        const hasView = !!(userPerms[item.name] && userPerms[item.name].view);
+        if (!hasView) return null;
+      }
+    }
+
     if (item.name === 'Inventory') {
-      const dynamicSubitems = [...item.subitems];
+      let dynamicSubitems = [...item.subitems];
       
       // Insert new items if settings are enabled
       let offset = 0;
@@ -297,10 +324,26 @@ export function Sidebar({ isOpen, onClose }) {
         offset++;
       }
 
+      // Filter subitems if user permissions exist
+      if (userPerms) {
+        dynamicSubitems = dynamicSubitems.filter(sub => {
+          return !!(userPerms[sub.name] && userPerms[sub.name].view);
+        });
+      }
+
       return { ...item, subitems: dynamicSubitems };
     }
+
+    // Filter subitems of other parent menus if user permissions exist
+    if (item.hasSubmenu && item.subitems && userPerms) {
+      const filteredSub = item.subitems.filter(sub => {
+        return !!(userPerms[sub.name] && userPerms[sub.name].view);
+      });
+      return { ...item, subitems: filteredSub };
+    }
+
     return item;
-  });
+  }).filter(Boolean);
 
   const filteredMenuItems = displayMenuItems.map(item => {
     // If it's not a submenu item, just check its name
