@@ -228,7 +228,11 @@ export function IncomeLedgerInput() {
             <div className="flex flex-col gap-1 w-full max-w-[min(92vw,500px)]">
                <div className="flex justify-between items-center px-1">
                  <label className="text-[13px] font-bold text-gray-800">Incomes Name</label>
-                 <span className="text-[13px] font-bold text-[#dc3545]">Account Balance : ₹{(selectedIncome?.balance || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                 {isAccountWise && (
+                   <span className="text-[13px] font-bold text-[#dc3545]">
+                     Account Balance : ₹{(selectedIncome?.balance || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+                   </span>
+                 )}
                </div>
                
                <div className="relative w-full" ref={dropdownRef}>
@@ -292,7 +296,7 @@ export function IncomeLedgerInput() {
               onClick={() => setIsAccountWise(!isAccountWise)}
             >
                <span className={`text-[13px] font-bold ${isAccountWise ? 'text-gray-800' : 'text-gray-500'}`}>Account-wise</span>
-               <div className={`w-[36px] h-[20px] rounded-full relative cursor-pointer shadow-inner transition-colors ${isAccountWise ? 'bg-[#4F46E5]' : 'bg-gray-300'}`}>
+               <div className={`w-[36px] h-[20px] rounded-full relative cursor-pointer shadow-inner transition-colors ${isAccountWise ? 'bg-[#4F46E5]' : 'bg-teal-600'}`}>
                  <div className={`w-[14px] h-[14px] bg-white rounded-full absolute top-[3px] shadow-sm transition-all ${isAccountWise ? 'left-[3px]' : 'right-[3px]'}`}></div>
                </div>
                <span className={`text-[13px] font-bold ${!isAccountWise ? 'text-gray-800' : 'text-gray-500'}`}>Date-wise</span>
@@ -305,7 +309,7 @@ export function IncomeLedgerInput() {
         <div className="flex-1 overflow-x-auto overflow-y-hidden min-h-0 w-full">
           <div className="min-w-[900px] flex flex-col h-full">
             {/* Table Header */}
-            <div className="bg-[#343a40] text-white grid grid-cols-[50px_130px_1fr_120px_120px_100px_120px_80px] text-center border-b border-gray-600">
+            <div className={`bg-[#343a40] text-white grid ${isAccountWise ? 'grid-cols-[50px_130px_1fr_120px_120px_100px_120px_80px]' : 'grid-cols-[50px_130px_1fr_120px_120px_100px_80px]'} text-center border-b border-gray-600`}>
               <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
                 #
               </div>
@@ -324,9 +328,11 @@ export function IncomeLedgerInput() {
               <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
                 Discount
               </div>
-              <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
-                Balance
-              </div>
+              {isAccountWise && (
+                <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
+                  Balance
+                </div>
+              )}
               <div className="py-2.5 text-[13px] font-bold flex items-center justify-center uppercase">
                 Action
               </div>
@@ -334,7 +340,7 @@ export function IncomeLedgerInput() {
 
             {/* Render added entries */}
             {transactions.map((entry, index) => (
-              <div key={entry.id} className="grid grid-cols-[50px_130px_1fr_120px_120px_100px_120px_80px] bg-white border-b border-gray-200">
+              <div key={entry.id} className={`grid ${isAccountWise ? 'grid-cols-[50px_130px_1fr_120px_120px_100px_120px_80px]' : 'grid-cols-[50px_130px_1fr_120px_120px_100px_80px]'} bg-white border-b border-gray-200`}>
                 <div className="border-r border-gray-200 flex items-center justify-center p-1 bg-gray-100 text-[13px]">
                   {index + 1}
                 </div>
@@ -353,9 +359,11 @@ export function IncomeLedgerInput() {
                 <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">
                   {entry.discount > 0 ? entry.discount.toFixed(2) : '-'}
                 </div>
-                <div className={`border-r border-gray-200 p-1 flex items-center justify-center text-[13px] font-bold ${entry.balance > 0 ? 'text-[#28a745]' : 'text-[#dc3545]'}`}>
-                  {Math.abs(entry.balance).toFixed(2)} {entry.balance > 0 ? 'Cr' : 'Dr'}
-                </div>
+                {isAccountWise && (
+                  <div className={`border-r border-gray-200 p-1 flex items-center justify-center text-[13px] font-bold ${entry.balance > 0 ? 'text-[#28a745]' : 'text-[#dc3545]'}`}>
+                    {Math.abs(entry.balance).toFixed(2)} {entry.balance > 0 ? 'Cr' : 'Dr'}
+                  </div>
+                )}
                 <div className="p-1 flex items-center justify-center bg-gray-50 no-print">
                   <button className="text-red-500 hover:text-red-700">
                     <Trash2 className="w-4 h-4" strokeWidth={2.5} />
@@ -365,7 +373,7 @@ export function IncomeLedgerInput() {
             ))}
 
             {/* Input Row */}
-            <div className="grid grid-cols-[50px_130px_1fr_120px_120px_100px_120px_80px] bg-white border-b border-gray-200 no-print">
+            <div className={`grid ${isAccountWise ? 'grid-cols-[50px_130px_1fr_120px_120px_100px_120px_80px]' : 'grid-cols-[50px_130px_1fr_120px_120px_100px_80px]'} bg-white border-b border-gray-200 no-print`}>
               <div className="border-r border-gray-200 flex items-center justify-center p-1 bg-[#343a40]">
                 <span className="text-white text-[12px] font-bold">#</span>
               </div>
@@ -432,9 +440,11 @@ export function IncomeLedgerInput() {
                   className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-center"
                 />
               </div>
-              <div className="border-r border-gray-200 p-1 flex items-center bg-[#e9ecef]">
-                <input type="text" value={selectedIncome ? Math.abs(selectedIncome.balance).toFixed(2) : "0"} className="w-full h-[32px] bg-transparent text-[13px] font-bold text-gray-600 outline-none text-center" readOnly />
-              </div>
+              {isAccountWise && (
+                <div className="border-r border-gray-200 p-1 flex items-center bg-[#e9ecef]">
+                  <input type="text" value={selectedIncome ? Math.abs(selectedIncome.balance).toFixed(2) : "0"} className="w-full h-[32px] bg-transparent text-[13px] font-bold text-gray-600 outline-none text-center" readOnly />
+                </div>
+              )}
               <div className="bg-[#343a40] flex items-center justify-center gap-1.5 p-1">
                 <button onClick={() => fileInputRef.current?.click()} className="bg-white p-1 rounded-sm shadow-sm hover:bg-gray-100">
                   <Paperclip className="w-4 h-4 text-gray-600" strokeWidth={2.5} />
@@ -446,7 +456,7 @@ export function IncomeLedgerInput() {
             </div>
 
             {/* Total Row */}
-            <div className="grid grid-cols-[50px_130px_1fr_120px_120px_100px_120px_80px] bg-white border-b border-gray-200 mt-auto">
+            <div className={`grid ${isAccountWise ? 'grid-cols-[50px_130px_1fr_120px_120px_100px_120px_80px]' : 'grid-cols-[50px_130px_1fr_120px_120px_100px_80px]'} bg-white border-b border-gray-200 mt-auto`}>
               <div className="col-span-3 border-r border-gray-200 p-2 flex items-center justify-end pr-4">
                 <span className="font-bold text-[14px] text-gray-800">Total :</span>
               </div>
@@ -465,11 +475,13 @@ export function IncomeLedgerInput() {
                   {transactions.reduce((acc, curr) => acc + curr.discount, 0).toFixed(2)}
                 </span>
               </div>
-              <div className="border-r border-gray-200 p-2 flex items-center justify-center">
-                <span className="font-bold text-[14px] text-[#28a745]">
-                  {selectedIncome ? Math.abs(selectedIncome.balance).toFixed(2) : "0.00"}
-                </span>
-              </div>
+              {isAccountWise && (
+                <div className="border-r border-gray-200 p-2 flex items-center justify-center">
+                  <span className="font-bold text-[14px] text-[#28a745]">
+                    {selectedIncome ? Math.abs(selectedIncome.balance).toFixed(2) : "0.00"}
+                  </span>
+                </div>
+              )}
               <div className="p-2 flex items-center justify-center no-print">
               </div>
             </div>

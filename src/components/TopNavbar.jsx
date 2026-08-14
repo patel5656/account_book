@@ -219,7 +219,7 @@ export function TopNavbar({ toggleSidebar, isOpen }) {
       <div className="flex items-center gap-[4px] sm:gap-[10px] flex-1 justify-end">
         {/* Validity Badge */}
         {validityDate && (
-          <div className="flex flex-wrap items-center gap-1 bg-[#dc3545] px-1.5 sm:px-2.5 py-0.5 rounded-full text-white flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-1 bg-[#28a745] px-1.5 sm:px-2.5 py-0.5 rounded-full text-white flex-shrink-0">
             <span className="text-[9px] sm:text-[11px] font-medium tracking-wide whitespace-nowrap">
               <span className="hidden sm:inline">Validity - </span>
               {validityDate} <span className="font-bold hidden xs:inline">{daysLeft} days left</span>

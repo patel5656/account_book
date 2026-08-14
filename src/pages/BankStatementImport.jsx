@@ -49,7 +49,7 @@ export function BankStatementImport() {
 
     const formData = new FormData();
     formData.append('statementFile', selectedFile);
-    formData.append('bankName', banks.find(b => b.id.toString() === selectedBank)?.bankName || '');
+    formData.append('bankName', banks.find(b => b.id.toString() === selectedBank)?.name || '');
     formData.append('accountNumber', banks.find(b => b.id.toString() === selectedBank)?.accountNo || '');
     
     setIsUploading(true);
@@ -115,7 +115,7 @@ export function BankStatementImport() {
                   >
                     <option value="">Select cash / bank account</option>
                     {banks.map(b => (
-                      <option key={b.id} value={b.id}>{b.bankName} - {b.accountNo}</option>
+                      <option key={b.id} value={b.id}>{b.name} - {b.accountNo}</option>
                     ))}
                   </select>
                 </div>

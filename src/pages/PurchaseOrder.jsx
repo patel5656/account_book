@@ -62,6 +62,7 @@ export function PurchaseOrder() {
   const [showSummaryDiscDropdown, setShowSummaryDiscDropdown] = useState(false);
   const [isQuantityCalcOpen, setIsQuantityCalcOpen] = useState(false);
   const [activeQuantityRow, setActiveQuantityRow] = useState(null);
+  const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
 
   useEffect(() => {
     if (selectedCustomerId) {
@@ -274,7 +275,8 @@ export function PurchaseOrder() {
     try {
       await apiClient.post('/inventory/PURCHASE_ORDER', payload);
       alert('Purchase Order Saved Successfully!');
-      navigate('/admin/invoice-details/company_purchase_order');
+      setIsPaymentStatusModalOpen(false);
+      setShowBarcodePrintModal(true);
     } catch (error) {
       console.error(error);
       const errMsg = error?.response?.data?.error || error?.response?.data?.message || 'Failed to save Purchase Order.';
@@ -501,6 +503,15 @@ export function PurchaseOrder() {
     // We identify a unique row by productId AND variant name (if present)
     const existingIndex = newRows.findIndex((r, i) => i !== index && r.productId === parseInt(productId) && r.variantName === (variant?.name || ""));
     if (existingIndex !== -1) {
+      if (settings?.negativeStockLock) {
+        const product = products.find(p => p.id === parseInt(productId));
+        const currentQty = Number(newRows[existingIndex].qty) || 0;
+        if (product && currentQty + 1 > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+      
       newRows[existingIndex] = {
         ...newRows[existingIndex],
         qty: (Number(newRows[existingIndex].qty) || 0) + 1,
@@ -514,6 +525,13 @@ export function PurchaseOrder() {
 
     const product = products.find(p => p.id === parseInt(productId));
     if (product) {
+      if (settings?.negativeStockLock) {
+        if (1 > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+
       let pMRP = product.mrp || 0;
       let pPrice = product.purchasePrice || product.price || 0;
 
@@ -554,6 +572,17 @@ export function PurchaseOrder() {
   };
 
   const updateRow = (index, field, value) => {
+    if (settings?.negativeStockLock && ['qty', 'primaryOpeningQty', 'secOpeningQty'].includes(field)) {
+      const productId = rows[index].productId;
+      if (productId) {
+        const product = products.find(p => p.id === parseInt(productId));
+        if (product && Number(value) > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+    }
+
     const newRows = [...rows];
     newRows[index][field] = value;
 
@@ -691,7 +720,7 @@ export function PurchaseOrder() {
       d2Amt,
       finalAmount,
       totalDiscAmount: d1Amt + d2Amt,
-      totalQty: (Number(row.qty) || 0) + (Number(row.freeQty) || 0)
+      totalQty: (settings?.primaryOpeningQty ? (Number(row.primaryOpeningQty) || 0) : (Number(row.qty) || 0)) + (Number(row.freeQty) || 0)
     };
   };
 
@@ -1165,7 +1194,7 @@ export function PurchaseOrder() {
             
             <div className="summary-stats grid grid-cols-4 gap-2">
               <div className="border border-gray-200 bg-[#f8f9fa] rounded-[3px] p-2 flex flex-col items-center justify-center text-center">
-                <span className="text-[12px] font-bold text-gray-700">Total Qty (Inc. Free)</span>
+                <span className="text-[12px] font-bold text-gray-700">Total Qty</span>
                 <span className="text-[14px] font-bold text-[#007bff]">{grandTotalQty}</span>
               </div>
               <div className="border border-gray-200 bg-[#f8f9fa] rounded-[3px] p-2 flex flex-col items-center justify-center text-center">
@@ -1216,7 +1245,7 @@ export function PurchaseOrder() {
                      <span className="absolute -top-[18px] left-0 text-[11px] font-bold text-gray-800">Dis.%</span>
                      <div className="relative">
                        <input 
-                         type="text" 
+                         type="number" 
                          value={manualDiscPercent !== "" ? manualDiscPercent : ""}
                          placeholder="0"
                          onChange={(e) => {
@@ -1227,32 +1256,9 @@ export function PurchaseOrder() {
                              setManualDiscAmount('');
                            }
                          }}
-                         onFocus={() => setShowSummaryDiscDropdown(true)}
-                         onBlur={() => setTimeout(() => setShowSummaryDiscDropdown(false), 200)}
-                         className="w-full border border-gray-300 rounded-[3px] py-1 pl-2 pr-6 text-[13px] text-right text-blue-700 font-bold outline-none bg-white" 
+                         className="w-full border border-gray-300 rounded-[3px] py-1 px-2 text-[13px] text-right text-blue-700 font-bold outline-none bg-white" 
                        />
-                       <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600 text-[10px]">
-                         ▼
-                       </div>
                      </div>
-                     {showSummaryDiscDropdown && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-50 rounded-b-[3px] mt-[1px]">
-                          {[5, 12, 18, 28].map(val => (
-                            <div 
-                              key={val} 
-                              className="px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-center text-[13px] text-gray-800 font-bold border-b border-gray-100 last:border-0"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                setManualDiscPercent(val);
-                                setManualDiscAmount((grandBaseAmount * Number(val) / 100).toFixed(2));
-                                setShowSummaryDiscDropdown(false);
-                              }}
-                            >
-                              {val}
-                            </div>
-                          ))}
-                        </div>
-                     )}
                    </div>
                    <div className="flex-1 relative mt-[18px]">
                      <span className="absolute -top-[18px] left-0 text-[11px] font-bold text-gray-800">Dis. Amount</span>
@@ -1587,8 +1593,7 @@ export function PurchaseOrder() {
           onClose={() => {
             setIsQuantityCalcOpen(false);
             setActiveQuantityRow(null);
-          }}
-          initialData={{
+          }}           initialData={{
              productName: rows[activeQuantityRow]?.productName || products.find(p => p.id === parseInt(rows[activeQuantityRow]?.productId))?.name || 'Unknown Item',
              hsn: rows[activeQuantityRow]?.hsn,
              rollQty: rows[activeQuantityRow]?.rollQty,
@@ -1597,6 +1602,7 @@ export function PurchaseOrder() {
              price: rows[activeQuantityRow]?.price,
              disc1: rows[activeQuantityRow]?.disc1,
              taxRate: rows[activeQuantityRow]?.gstRate,
+             isGstInclusive: rows[activeQuantityRow]?.isGstInclusive,
           }}
           onSave={(calcData) => {
              const newRows = [...rows];
@@ -1605,15 +1611,58 @@ export function PurchaseOrder() {
                rollQty: calcData.rollQty,
                meterPerRoll: calcData.meterPerRoll,
                qty: calcData.qty,
+               primaryOpeningQty: calcData.qty,
+               secOpeningQty: 0,
                price: calcData.price,
                disc1: calcData.disc1,
                gstRate: calcData.taxRate,
+               isGstInclusive: calcData.isGstInclusive,
              };
              setRows(newRows);
              setIsQuantityCalcOpen(false);
              setActiveQuantityRow(null);
           }}
         />
+      )}
+      
+      {showBarcodePrintModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[5px] shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col p-8 text-center animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-[80px] h-[80px] border-[3px] border-[#87adbd] rounded-full flex items-center justify-center mb-6">
+              <span className="text-[#87adbd] text-[40px] font-medium leading-none">?</span>
+            </div>
+            <h2 className="text-[24px] font-bold text-[#545454] mb-8 leading-tight">
+              Do you want to print the barcode<br/>of this invoice?
+            </h2>
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => {
+                  const itemsToPrint = rows.filter(r => r.productId && r.qty > 0).map(r => ({
+                    productId: r.productId,
+                    name: r.productName || r.name || products.find(p => p.id === parseInt(r.productId))?.name,
+                    barcode: r.barcode || r.productCode || products.find(p => p.id === parseInt(r.productId))?.barcode || '',
+                    quantity: r.qty,
+                    salePrice: r.salePrice || r.price,
+                    mrp: r.mrp || r.price
+                  }));
+                  navigate('/admin/barcode', { state: { invoiceItems: itemsToPrint } });
+                }}
+                className="bg-[#3085d6] hover:bg-[#2874ba] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
+              >
+                Yes, Print Barcode!
+              </button>
+              <button 
+                onClick={() => {
+                  setShowBarcodePrintModal(false);
+                  navigate('/admin/invoice-details/company_purchase_order');
+                }}
+                className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

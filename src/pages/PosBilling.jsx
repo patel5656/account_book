@@ -18,6 +18,7 @@ import {
 import { cn, getPurchasePriceCode } from '../utils';
 import { ItemMasterModal } from '../components/ItemMasterModal';
 import apiClient from '../api/apiClient';
+import { createTransaction, getTransactionById, deleteTransaction } from '../api/inventory';
 
 export function PosBilling() {
   const navigate = useNavigate();
@@ -50,6 +51,8 @@ export function PosBilling() {
   const [lastInvoiceNo, setLastInvoiceNo] = useState('');
   
   const [isBillOnHold, setIsBillOnHold] = useState(false);
+  const [holdSuccessMsgs, setHoldSuccessMsgs] = useState([]);
+  const [activeHoldId, setActiveHoldId] = useState(null);
   
   const [billDiscount, setBillDiscount] = useState(() => {
     const saved = localStorage.getItem('pos_billDiscount');
@@ -126,7 +129,9 @@ export function PosBilling() {
   }, []);
 
   // Customer search handler
+  const [activeCustomerIndex, setActiveCustomerIndex] = useState(-1);
   const handleCustomerSearch = (text) => {
+    setActiveCustomerIndex(-1);
     setCustomerName(text);
     setCustomerId(null);
     setShowSuggestions(true);
@@ -236,7 +241,9 @@ export function PosBilling() {
     }));
   }, [paymentMode, isWholesale]);
 
+  const [activeProductIndex, setActiveProductIndex] = useState(-1);
   const handleBarcodeChange = (e) => {
+    setActiveProductIndex(-1);
     const text = e.target.value;
     setBarcodeInput(text);
     
@@ -286,6 +293,38 @@ export function PosBilling() {
       setShowProductSuggestions(false);
     } else {
       alert('Product not found!');
+    }
+  };
+
+  const handleProductKeyDown = (e) => {
+    if (!showProductSuggestions || productSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveProductIndex(prev => (prev < productSuggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveProductIndex(prev => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === 'Enter') {
+      if (activeProductIndex >= 0 && activeProductIndex < productSuggestions.length) {
+        e.preventDefault();
+        handleProductSelect(productSuggestions[activeProductIndex]);
+      }
+    }
+  };
+
+  const handleCustomerKeyDown = (e) => {
+    if (!showSuggestions || customerSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveCustomerIndex(prev => (prev < customerSuggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveCustomerIndex(prev => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === 'Enter') {
+      if (activeCustomerIndex >= 0 && activeCustomerIndex < customerSuggestions.length) {
+        e.preventDefault();
+        handleCustomerSelect(customerSuggestions[activeCustomerIndex]);
+      }
     }
   };
 
@@ -422,18 +461,101 @@ export function PosBilling() {
     }
   };
 
-  const handleHoldBill = () => {
-    if (cart.length === 0 && !isBillOnHold) {
+  const loadHeldInvoice = async (id) => {
+    try {
+      const response = await getTransactionById(id);
+      if (response.success && response.data) {
+        const invoice = response.data;
+        
+        if (invoice.items && invoice.items.length > 0) {
+          const loadedCart = invoice.items.map(item => ({
+             id: item.productId,
+             name: item.product?.name || 'Unknown',
+             barcode: item.product?.barcode || '',
+             qty: item.quantity,
+             price: item.price,
+             discount: item.discount1 || 0,
+             total: item.amount,
+             mrp: item.product?.mrp || item.price,
+             priceReason: 'Loaded from Hold',
+             isManualPrice: true,
+             stock: item.product?.stock || 0
+          }));
+          setCart(loadedCart);
+        } else {
+          setCart([]);
+        }
+        
+        if (invoice.customerId) {
+           setCustomerId(invoice.customerId);
+           const cust = allCustomers.find(c => c.id === invoice.customerId);
+           if (cust) setCustomerName(cust.name);
+        } else {
+           setCustomerId(null);
+           setCustomerName("");
+        }
+        if (invoice.paymentMode) setPaymentMode(invoice.paymentMode);
+        
+        setActiveHoldId(id);
+        setIsBillOnHold(true);
+      }
+    } catch (error) {
+      console.error("Error loading hold invoice", error);
+      alert("Failed to load held bill.");
+    }
+  };
+
+  const handleHoldBill = async () => {
+    if (cart.length === 0) {
       alert("Cart is empty! Nothing to hold.");
       return;
     }
     
-    if (isBillOnHold) {
+    const payload = {
+      invoiceNo: `POS-${Date.now()}`,
+      customerId: customerId || null,
+      date: new Date().toISOString().split('T')[0],
+      paymentMode,
+      remark: "POS Hold",
+      status: "HOLD",
+      subTotal: subtotal,
+      totalDiscount: discountAmount + offerDiscountAmount,
+      totalAmount: finalAmount,
+      items: cart.map(item => ({
+        productId: Number(item.id),
+        quantity: Number(item.qty) || 1,
+        price: Number(item.price) || 0,
+        discount1: Number(item.discount) || 0,
+        amount: Number(item.total) || 0,
+      })),
+      offerId: selectedOffer ? selectedOffer.id : null,
+      redeemedPoints: effectiveRedeemed,
+      loyaltyDiscountValue: discountAmount + offerDiscountAmount
+    };
+
+    try {
+      const response = await createTransaction('sales', payload);
+      const transactionId = response.data?.id;
+      const custName = customerName || 'Walk-in Customer';
+      setHoldSuccessMsgs(prev => [...prev, { id: transactionId, msg: `Hold: ${custName}` }]);
+      
+      if (activeHoldId) {
+         try { await deleteTransaction(activeHoldId); } catch(e) { console.error("Error deleting old hold", e); }
+      }
+      setActiveHoldId(null);
       setIsBillOnHold(false);
-      alert("Bill restored from Hold.");
-    } else {
-      setIsBillOnHold(true);
-      alert("Bill placed on Hold.");
+      
+      // Reset POS form
+      setCart([]);
+      setCustomerId(null);
+      setCustomerName('');
+      setCustomerPoints(0);
+      setRedeemedPoints(0);
+      
+      alert("Bill placed on Hold successfully!");
+    } catch (error) {
+      console.error(error);
+      alert('Failed to hold bill.');
     }
   };
 
@@ -536,6 +658,24 @@ export function PosBilling() {
 
           {/* POS Controls */}
           <div className="p-3 border-b border-gray-200 bg-gray-50 flex gap-3 flex-wrap">
+            {holdSuccessMsgs.length > 0 && (
+              <div className="w-full flex flex-wrap gap-2 mb-1">
+                {holdSuccessMsgs.map((hold, idx) => (
+                  <div key={idx} className="bg-[#e8f5e9] border border-[#c8e6c9] text-[#2e7d32] px-2 py-1 rounded-[3px] flex items-center gap-1.5 text-[12px] font-bold shadow-sm hover:bg-[#c8e6c9] cursor-pointer transition-colors" onClick={() => loadHeldInvoice(hold.id)}>
+                    {hold.msg}
+                    <X className="w-3.5 h-3.5 cursor-pointer hover:text-red-600" onClick={(e) => {
+                      e.stopPropagation();
+                      setHoldSuccessMsgs(prev => prev.filter(h => h.id !== hold.id));
+                      deleteTransaction(hold.id).catch(err => console.error(err));
+                      if (activeHoldId === hold.id) {
+                        setActiveHoldId(null);
+                        setIsBillOnHold(false);
+                      }
+                    }}/>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex-1 min-w-[200px] flex gap-2">
               <form onSubmit={handleBarcodeSubmit} className="relative flex-1">
                 <input 
@@ -543,6 +683,7 @@ export function PosBilling() {
                   type="text" 
                   value={barcodeInput}
                   onChange={handleBarcodeChange}
+                  onKeyDown={handleProductKeyDown}
                   onBlur={() => setTimeout(() => setShowProductSuggestions(false), 300)}
                   onFocus={() => { 
                     if (!barcodeInput.trim()) {
@@ -562,11 +703,11 @@ export function PosBilling() {
                     className="absolute top-full left-0 w-full bg-white border-2 border-indigo-500 shadow-xl z-50 rounded-b-[6px] max-h-[160px] overflow-y-scroll pos-product-scroll"
                     onMouseDown={(e) => e.preventDefault()}
                   >
-                    {productSuggestions.map(p => (
+                    {productSuggestions.map((p, index) => (
                       <div
                         key={p.id}
                         onClick={() => handleProductSelect(p)}
-                        className="px-3 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-0 flex justify-between items-center"
+                        className={`px-3 py-2 cursor-pointer border-b border-gray-100 last:border-0 flex justify-between items-center ${activeProductIndex === index ? 'bg-indigo-100' : 'hover:bg-indigo-50'}`}
                       >
                         <div>
                           <div className="font-bold text-[13px] text-gray-800">{p.name}</div>
@@ -598,6 +739,7 @@ export function PosBilling() {
                 type="text" 
                 value={customerName}
                 onChange={(e) => handleCustomerSearch(e.target.value)}
+                onKeyDown={handleCustomerKeyDown}
                 onBlur={handleCustomerBlur}
                 onFocus={handleCustomerFocus}
                 placeholder="Customer Mobile / Name"
@@ -614,11 +756,11 @@ export function PosBilling() {
                   className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-50 rounded-b-[4px] max-h-[200px] overflow-y-scroll pos-product-scroll"
                   onMouseDown={(e) => e.preventDefault()}
                 >
-                  {customerSuggestions.map(c => (
+                  {customerSuggestions.map((c, index) => (
                     <div
                       key={c.id}
                       onMouseDown={() => handleCustomerSelect(c)}
-                      className="px-3 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-0"
+                      className={`px-3 py-2 cursor-pointer border-b border-gray-100 last:border-0 ${activeCustomerIndex === index ? 'bg-indigo-100' : 'hover:bg-indigo-50'}`}
                     >
                       <div className="font-semibold text-[13px] text-gray-800">{c.name}</div>
                       <div className="text-[11px] text-gray-500">{c.mobile || c.phone || 'No mobile'}</div>
@@ -1019,7 +1161,7 @@ export function PosBilling() {
                  <span>{subtotal.toFixed(2)}</span>
                </div>
                <div className="flex justify-between mb-2">
-                 <span>Tax Amount:</span>
+                 <span>Includes Tax:</span>
                  <span>{totalTax.toFixed(2)}</span>
                </div>
                {billDiscount > 0 && (
@@ -1060,7 +1202,7 @@ export function PosBilling() {
                 </div>
 
                 {/* QR Code for payment/bill */}
-                <div className="flex flex-col items-center mt-4 pt-3 border-t border-dashed border-gray-300">
+                <div className="flex flex-col items-center mt-4 pt-3 border-t border-dashed border-gray-300 pb-8">
                   <p className="text-[10px] font-bold mb-2">Scan to View Full Bill</p>
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/bill/${lastInvoiceNo}`)}`}

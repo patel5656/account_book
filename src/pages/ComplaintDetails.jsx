@@ -129,9 +129,9 @@ export function ComplaintDetails() {
   };
 
   return (
-    <div className="bg-white min-h-[calc(100vh-60px)] flex flex-col relative w-full overflow-x-auto">
+    <div className="bg-[#f4f6f9] min-h-[calc(100vh-45px)] flex flex-col relative w-full overflow-hidden">
       {/* Top Teal Bar */}
-      <div className="bg-[#4F46E5] px-4 py-[6px] flex justify-between items-center text-white">
+      <div className="bg-[#4F46E5] px-4 py-[6px] flex justify-between items-center text-white shadow-sm">
         <h2 className="text-[14.5px] font-medium tracking-wide">Complain Summary</h2>
         <div className="flex flex-wrap items-center gap-1.5">
           <button 
@@ -150,9 +150,9 @@ export function ComplaintDetails() {
       </div>
 
       {/* Filters Row */}
-      <div className="px-4 py-3 border-b border-gray-200 flex flex-wrap items-end gap-x-6 gap-y-3 bg-[#f8f9fa]">
+      <div className="px-4 py-3 border-b border-gray-200 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 bg-white shadow-sm">
         {/* Customer Name Toggle & Select */}
-        <div className="flex flex-col gap-1 w-[220px]">
+        <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
           <div className="flex flex-wrap items-center gap-2 px-1">
             <div 
               onClick={() => setIsCustomerEnabled(!isCustomerEnabled)}
@@ -174,7 +174,7 @@ export function ComplaintDetails() {
         </div>
 
         {/* Barcode */}
-        <div className="flex flex-col gap-1 w-[160px]">
+        <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
           <label className="text-[13px] font-bold text-gray-800 px-1">Barcode</label>
           <input 
             type="text" 
@@ -184,7 +184,7 @@ export function ComplaintDetails() {
         </div>
 
         {/* Status */}
-        <div className="flex flex-col gap-1 w-[160px]">
+        <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
           <label className="text-[13px] font-bold text-gray-800 px-1">Status</label>
           <select className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 bg-white focus:border-[#4F46E5]">
             <option>All</option>
@@ -197,7 +197,7 @@ export function ComplaintDetails() {
         </div>
 
         {/* Filter By */}
-        <div className="flex flex-col gap-1 w-[160px]">
+        <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
           <label className="text-[13px] font-bold text-gray-800 px-1">Filter By</label>
           <select className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 bg-white focus:border-[#4F46E5]">
             <option>Complain Date</option>
@@ -206,7 +206,7 @@ export function ComplaintDetails() {
         </div>
 
         {/* Date & Search */}
-        <div className="flex flex-col gap-1 flex-1 w-full">
+        <div className="flex flex-col gap-1 flex-1 min-w-[300px]">
           <label className="text-[13px] font-bold text-gray-800 px-1">Date<span className="text-[#17a2b8]">(01-Jan-2000 to 30-Jul-2026)</span></label>
           <div className="flex gap-2">
             <select 
@@ -217,7 +217,7 @@ export function ComplaintDetails() {
                   setIsCustomDateModalOpen(true);
                 }
               }}
-              className="flex-1 h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 bg-white focus:border-[#4F46E5] max-w-[150px]"
+              className="flex-1 h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 bg-white focus:border-[#4F46E5]"
             >
               <option>Today</option>
               <option>Yesterday</option>
@@ -235,14 +235,15 @@ export function ComplaintDetails() {
       </div>
 
       {/* Empty State / List */}
-      <div className="flex-1 bg-white overflow-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="flex-1 p-4 flex flex-col min-h-0">
+        <div className="flex-1 bg-white border border-gray-200 rounded-[3px] shadow-sm overflow-auto">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
           <thead>
             <tr className="bg-gray-100 border-b">
               <th className="px-4 py-2 text-[13px] font-bold text-gray-700">Date</th>
               <th className="px-4 py-2 text-[13px] font-bold text-gray-700">Party</th>
               <th className="px-4 py-2 text-[13px] font-bold text-gray-700">Product</th>
-              <th className="px-4 py-2 text-[13px] font-bold text-gray-700">Technician</th>
+              {showTechnician && <th className="px-4 py-2 text-[13px] font-bold text-gray-700">Technician</th>}
               <th className="px-4 py-2 text-[13px] font-bold text-gray-700">Status</th>
             </tr>
           </thead>
@@ -252,7 +253,7 @@ export function ComplaintDetails() {
                 <td className="px-4 py-2 text-[13px]">{new Date(c.complainDate).toLocaleDateString()}</td>
                 <td className="px-4 py-2 text-[13px]">{c.partyName}</td>
                 <td className="px-4 py-2 text-[13px]">{c.productName}</td>
-                <td className="px-4 py-2 text-[13px]">{c.technicianName}</td>
+                {showTechnician && <td className="px-4 py-2 text-[13px]">{c.technicianName}</td>}
                 <td className="px-4 py-2 text-[13px]">{c.status}</td>
               </tr>
             ))}
@@ -263,6 +264,7 @@ export function ComplaintDetails() {
             )}
           </tbody>
         </table>
+      </div>
       </div>
 
       {/* Complain Master Modal */}
@@ -335,19 +337,21 @@ export function ComplaintDetails() {
               </div>
 
               {/* Technician Name */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[13px] font-bold text-gray-800">Technician Name</label>
-                <select 
-                  value={technicianName}
-                  onChange={(e) => setTechnicianName(e.target.value)}
-                  className="w-full h-[32px] border border-gray-300 rounded-[3px] px-3 text-[13px] outline-none focus:border-[#4F46E5] text-gray-650 bg-white"
-                >
-                  <option value="">Select Name</option>
-                  {employees.map(e => (
-                    <option key={e.id} value={e.name}>{e.name}</option>
-                  ))}
-                </select>
-              </div>
+              {showTechnician && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[13px] font-bold text-gray-800">Technician Name</label>
+                  <select 
+                    value={technicianName}
+                    onChange={(e) => setTechnicianName(e.target.value)}
+                    className="w-full h-[32px] border border-gray-300 rounded-[3px] px-3 text-[13px] outline-none focus:border-[#4F46E5] text-gray-650 bg-white"
+                  >
+                    <option value="">Select Name</option>
+                    {employees.map(e => (
+                      <option key={e.id} value={e.name}>{e.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Complain Details & Service Amount */}
               <div className="grid grid-cols-[3fr_1fr] gap-4">

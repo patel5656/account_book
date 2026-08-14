@@ -174,9 +174,9 @@ export default function PageSettingModal({ isOpen, onClose, defaultLabel = "50mm
       };
       try {
         const response = await updateBarcodeSetting(labelData.id, payload);
-        if (response.success) {
+        if (response || response?.success) {
           if (onSave) onSave();
-          onClose(); // Optional: close on success
+          onClose(); // Close on success
         }
       } catch (error) {
         console.error("Error updating page setup:", error);

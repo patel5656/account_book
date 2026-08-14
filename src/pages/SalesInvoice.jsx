@@ -62,8 +62,11 @@ export function SalesInvoice() {
   const [activeBatchDropdownRow, setActiveBatchDropdownRow] = useState(null);
   const [activeUnitDropdownRow, setActiveUnitDropdownRow] = useState(null);
   const [tempBatchData, setTempBatchData] = useState({ batchNo: '', expDate: '', mfgDate: '' });
+  const [availableBatches, setAvailableBatches] = useState({});
   const [isQuantityCalcOpen, setIsQuantityCalcOpen] = useState(false);
   const [activeQuantityRow, setActiveQuantityRow] = useState(null);
+  const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
+  const [savedInvoiceNo, setSavedInvoiceNo] = useState("");
   
   // Batch Settings
   const [batchSettings, setBatchSettings] = useState({
@@ -386,6 +389,34 @@ export function SalesInvoice() {
     }
   }, [isWholesale]);
 
+  const fetchAvailableBatches = async (productId, autoFillIndex = null) => {
+    if (!productId) return;
+    try {
+      const res = await apiClient.get(`/inventory/batches/${productId}`);
+      if (res.data?.success) {
+        setAvailableBatches(prev => ({ ...prev, [productId]: res.data.data }));
+        
+        if (autoFillIndex !== null && res.data.data.length > 0) {
+          const latestBatch = res.data.data[0];
+          setRows(prevRows => {
+            const newRows = [...prevRows];
+            if (newRows[autoFillIndex] && newRows[autoFillIndex].productId == productId && !newRows[autoFillIndex].batchNo) {
+               newRows[autoFillIndex] = {
+                 ...newRows[autoFillIndex],
+                 batchNo: latestBatch.batchNo || '',
+                 mfgDate: latestBatch.mfgDate || '',
+                 expDate: latestBatch.expDate || ''
+               };
+            }
+            return newRows;
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch batches:", error);
+    }
+  };
+
   const handleProductSelect = (index, productId, variant = null) => {
     if (!productId) {
       const newRows = [...rows];
@@ -409,11 +440,26 @@ export function SalesInvoice() {
     const product = products.find(p => p.id === parseInt(productId));
     if (!product) return;
 
+    if (settings?.negativeStockLock) {
+      if (1 > (product.stock || 0)) {
+        alert('Negative Stock Lock is enabled. Insufficient stock!');
+        return;
+      }
+    }
+
     // We identify a unique row by productId AND variant name (if present)
     const existingIndex = rows.findIndex((r, i) => i !== index && parseInt(r.productId) === product.id && r.variantName === (variant?.name || ""));
 
     if (existingIndex !== -1) {
       // Product already in list — increment its qty, reset current row to empty
+      if (settings?.negativeStockLock) {
+        const currentQty = Number(rows[existingIndex].qty) || 0;
+        if (currentQty + 1 > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+      
       const newRows = [...rows];
       newRows[existingIndex] = { 
         ...newRows[existingIndex], 
@@ -452,6 +498,7 @@ export function SalesInvoice() {
         variantName: variant?.name || ""
       };
       setRows(newRows);
+      fetchAvailableBatches(product.id, index);
       
       if (settings?.quantityCalculator) {
         setTimeout(() => {
@@ -463,6 +510,17 @@ export function SalesInvoice() {
   };
 
   const updateRow = (index, field, value) => {
+    if (settings?.negativeStockLock && ['qty', 'primaryOpeningQty', 'secOpeningQty'].includes(field)) {
+      const productId = rows[index].productId;
+      if (productId) {
+        const product = products.find(p => p.id === parseInt(productId));
+        if (product && Number(value) > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+    }
+
     const newRows = [...rows];
     newRows[index][field] = value;
     
@@ -608,7 +666,13 @@ export function SalesInvoice() {
 
     const pQty = calcQty;
     pPrice = priceToUse;
-    totalQty += pQty + pFree;
+    let visibleRowQty = 0;
+    if (settings?.primaryOpeningQty) {
+      visibleRowQty = (Number(row.primaryOpeningQty) || 0);
+    } else {
+      visibleRowQty = (Number(row.qty) || 0);
+    }
+    totalQty += visibleRowQty + pFree;
     
     const rowBaseAmount = pQty * pPrice;
     baseAmount += rowBaseAmount;
@@ -852,7 +916,10 @@ export function SalesInvoice() {
       else if (isReturn) type = 'sales_return';
       else if (isCustomerChallan) type = 'challan';
 
-      await createTransaction(type, payload);
+      const response = await createTransaction(type, payload);
+      if (response.data && response.data.invoiceNo) {
+        setSavedInvoiceNo(response.data.invoiceNo);
+      }
       
       if (activeHoldId) {
          try { await deleteTransaction(activeHoldId); } catch(e) { console.error("Error deleting hold after save", e); }
@@ -871,19 +938,8 @@ export function SalesInvoice() {
         ipAddress: '127.0.0.1' // Ideally captured in backend, passing dummy for now
       });
 
-      alert('Invoice Saved Successfully!');
-      
       setIsPaymentStatusModalOpen(false);
-      setRows([createEmptyRow()]);
-      setSelectedCustomerId("");
-      setCustomerInput("");
-      setRemark("");
-      setManualDiscPercent("");
-      setManualDiscAmount("");
-      setManualFreightAmt("");
-      setManualFreightGst("");
-      setManualTcsPercent("");
-      setManualTcsAmt("");
+      setShowBarcodePrintModal(true);
       
     } catch (error) {
       console.error(error);
@@ -1335,41 +1391,42 @@ export function SalesInvoice() {
                       <div key={colId} className="border-r border-gray-200 p-1 flex items-center justify-center relative">
                         <div className={`flex items-center justify-between w-full h-full border rounded-[3px] px-1 bg-[#b8e2f2] ${activeBatchDropdownRow === idx ? 'border-[#90c5da]' : 'border-transparent'}`}>
                           <input 
-                            type="text" 
-                            value={row.batchNo} 
-                            onChange={(e) => updateRow(idx, 'batchNo', e.target.value)}
-                            onClick={() => setActiveBatchDropdownRow(idx)}
+                            type="text" value={row.batchNo || ''} onChange={(e) => updateRow(idx, 'batchNo', e.target.value)}
+                            onClick={() => { setActiveBatchDropdownRow(idx); if(row.productId) fetchAvailableBatches(row.productId); }}
                             onBlur={() => setTimeout(() => setActiveBatchDropdownRow(null), 200)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
-                                e.preventDefault();
-                                setActiveBatchDropdownRow(null);
+                                e.preventDefault(); setActiveBatchDropdownRow(null); setActiveBatchRow(idx);
                                 setTempBatchData({ batchNo: row.batchNo || '', expDate: row.expDate || '', mfgDate: row.mfgDate || '' });
-                                setActiveBatchRow(idx);
                                 setIsBatchModalOpen(true);
                               }
                             }}
-                            placeholder="Batch No" 
-                            className="w-full h-full bg-transparent text-[12px] outline-none text-gray-800 font-bold" 
+                            placeholder="Batch No" className="w-full h-full bg-transparent text-[12px] outline-none text-gray-800 font-bold" 
                           />
-                          <ChevronDown size={14} className="text-gray-400 cursor-pointer" onClick={() => setActiveBatchDropdownRow(idx === activeBatchDropdownRow ? null : idx)} />
+                          <ChevronDown size={14} className="text-gray-400 cursor-pointer" onClick={() => { setActiveBatchDropdownRow(idx === activeBatchDropdownRow ? null : idx); if(row.productId) fetchAvailableBatches(row.productId); }} />
                         </div>
-                        
-                        {activeBatchDropdownRow === idx && row.batchNo && (
-                          <div className="absolute top-[calc(100%-4px)] left-1 min-w-[180px] bg-[#b8e2f2] shadow-md z-[60] border-t border-white rounded-b-[3px]">
-                            <div 
-                              className="p-1.5 flex justify-center items-center hover:bg-[#a5d7ea] transition-colors cursor-pointer"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setActiveBatchDropdownRow(null);
-                                setActiveBatchRow(idx);
-                                setTempBatchData({ batchNo: row.batchNo || '', expDate: row.expDate || '', mfgDate: row.mfgDate || '' });
-                                setIsBatchModalOpen(true);
-                              }}
-                            >
-                              <span className="font-bold text-[#007bff] text-[14px]">Add item "{row.batchNo}"</span>
-                            </div>
+                        {activeBatchDropdownRow === idx && (
+                          <div className="absolute top-[calc(100%-4px)] left-1 min-w-[180px] bg-[#b8e2f2] shadow-md z-[60] border-t border-white rounded-b-[3px] max-h-[200px] overflow-y-auto">
+                            {(availableBatches[row.productId] || []).map((batchObj, bIdx) => (
+                              <div key={bIdx} className="p-1.5 flex justify-between items-start hover:bg-[#a5d7ea] transition-colors cursor-pointer border-b border-[#a5d7ea]" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveBatchDropdownRow(null); setRows(prev => { const newRows = [...prev]; newRows[idx] = { ...newRows[idx], batchNo: batchObj.batchNo || '', mfgDate: batchObj.mfgDate || '', expDate: batchObj.expDate || '' }; return newRows; }); }}>
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-gray-800 text-[14px] leading-tight">{batchObj.batchNo}</span>
+                                  <div className="flex gap-2 text-[11px] font-bold mt-0.5">
+                                    {batchObj.mfgDate ? <span className="text-[#28a745]">Mfg. {new Date(batchObj.mfgDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span> : <span className="text-[#28a745]">Mfg.</span>}
+                                    {batchObj.expDate ? <span className="text-[#dc3545]">Exp. {new Date(batchObj.expDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span> : <span className="text-[#dc3545]">Exp.</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            {row.batchNo && (
+                              <div className="p-1.5 flex justify-between items-start hover:bg-[#a5d7ea] transition-colors cursor-pointer" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveBatchDropdownRow(null); setActiveBatchRow(idx); setTempBatchData({ batchNo: row.batchNo || '', expDate: row.expDate || '', mfgDate: row.mfgDate || '' }); setIsBatchModalOpen(true); }}>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="bg-[#007bff] text-white text-[11px] px-1.5 py-0.5 rounded-[3px] font-bold">{row.qty || 0} pcs</span>
+                                  <Edit className="w-3.5 h-3.5 text-[#17a2b8]" />
+                                  <Trash2 className="w-3.5 h-3.5 text-[#dc3545] hover:text-red-700" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveBatchDropdownRow(null); setRows(prev => { const newRows = [...prev]; newRows[idx] = { ...newRows[idx], batchNo: '', mfgDate: '', expDate: '' }; return newRows; }); }} />
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1541,7 +1598,7 @@ export function SalesInvoice() {
             
             <div className="summary-stats grid grid-cols-4 gap-2">
               <div className="border border-gray-200 bg-[#f8f9fa] rounded-[3px] p-2 flex flex-col items-center justify-center text-center">
-                <span className="text-[12px] font-bold text-gray-700">Total Qty (Inc. Free)</span>
+                <span className="text-[12px] font-bold text-gray-700">Total Qty</span>
                 <span className="text-[14px] font-bold text-[#007bff]">{totalQty}</span>
               </div>
               <div className="border border-gray-200 bg-[#f8f9fa] rounded-[3px] p-2 flex flex-col items-center justify-center text-center">
@@ -1587,34 +1644,12 @@ export function SalesInvoice() {
                      <span className="absolute -top-[18px] left-0 text-[11px] font-bold text-gray-800">Dis.%</span>
                      <div className="relative">
                        <input 
-                         type="text" 
+                         type="number" 
                          value={manualDiscPercent !== "" ? manualDiscPercent : effectiveDiscPercent} 
                          onChange={(e) => setManualDiscPercent(e.target.value)} 
-                         onFocus={() => setShowSummaryDiscDropdown(true)}
-                         onBlur={() => setTimeout(() => setShowSummaryDiscDropdown(false), 200)}
-                         className="w-full min-w-0 border border-gray-300 rounded-[3px] py-1 pl-2 pr-6 text-[13px] outline-none bg-white text-right text-blue-700 font-bold" 
+                         className="w-full min-w-0 border border-gray-300 rounded-[3px] py-1 px-2 text-[13px] outline-none bg-white text-right text-blue-700 font-bold" 
                        />
-                       <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600 text-[10px]">
-                         ▼
-                       </div>
                      </div>
-                     {showSummaryDiscDropdown && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-50 rounded-b-[3px] mt-[1px]">
-                          {[5, 12, 18, 28].map(val => (
-                            <div 
-                              key={val} 
-                              className="px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-center text-[13px] text-gray-800 font-bold border-b border-gray-100 last:border-0"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                setManualDiscPercent(val);
-                                setShowSummaryDiscDropdown(false);
-                              }}
-                            >
-                              {val}
-                            </div>
-                          ))}
-                        </div>
-                     )}
                    </div>
                    <div className="flex-1 relative mt-[18px]">
                      <span className="absolute -top-[18px] left-0 text-[11px] font-bold text-gray-800">Dis. Amount</span>
@@ -2057,7 +2092,7 @@ export function SalesInvoice() {
             setIsQuantityCalcOpen(false);
             setActiveQuantityRow(null);
           }}
-          initialData={{
+           initialData={{
              productName: rows[activeQuantityRow]?.productName || products.find(p => p.id === parseInt(rows[activeQuantityRow]?.productId))?.name || 'Unknown Item',
              hsn: rows[activeQuantityRow]?.hsn,
              rollQty: rows[activeQuantityRow]?.rollQty,
@@ -2066,6 +2101,7 @@ export function SalesInvoice() {
              price: rows[activeQuantityRow]?.price,
              disc1: rows[activeQuantityRow]?.disc1,
              taxRate: rows[activeQuantityRow]?.taxRate,
+             isGstInclusive: rows[activeQuantityRow]?.isGstInclusive,
           }}
           onSave={(calcData) => {
              const newRows = [...rows];
@@ -2074,15 +2110,62 @@ export function SalesInvoice() {
                rollQty: calcData.rollQty,
                meterPerRoll: calcData.meterPerRoll,
                qty: calcData.qty,
+               primaryOpeningQty: calcData.qty,
+               secOpeningQty: 0,
                price: calcData.price,
                disc1: calcData.disc1,
                taxRate: calcData.taxRate,
+               isGstInclusive: calcData.isGstInclusive,
              };
              setRows(newRows);
              setIsQuantityCalcOpen(false);
              setActiveQuantityRow(null);
           }}
         />
+      )}
+
+      {showBarcodePrintModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[5px] shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col p-8 text-center animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-[80px] h-[80px] border-[3px] border-[#87adbd] rounded-full flex items-center justify-center mb-6">
+              <span className="text-[#87adbd] text-[40px] font-medium leading-none">?</span>
+            </div>
+            <h2 className="text-[24px] font-bold text-[#545454] mb-8 leading-tight">
+              Do you want to print the Invoice<br/>now?
+            </h2>
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => {
+                  setShowBarcodePrintModal(false);
+                  if (savedInvoiceNo) {
+                    window.open(`/bill/${savedInvoiceNo}`, '_blank');
+                  }
+                }}
+                className="bg-[#3085d6] hover:bg-[#2874ba] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
+              >
+                Yes, Print it!
+              </button>
+              <button 
+                onClick={() => {
+                  setShowBarcodePrintModal(false);
+                  setRows([createEmptyRow()]);
+                  setSelectedCustomerId("");
+                  setCustomerInput("");
+                  setRemark("");
+                  setManualDiscPercent("");
+                  setManualDiscAmount("");
+                  setManualFreightAmt("");
+                  setManualFreightGst("");
+                  setManualTcsPercent("");
+                  setManualTcsAmt("");
+                }}
+                className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -242,6 +242,7 @@ export function PurchaseInvoice() {
   });
 
   const [rows, setRows] = useState([createEmptyRow()]);
+  const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
   const [productSearchMode, setProductSearchMode] = useState(() => {
     return localStorage.getItem('purchaseInvoice_productSearchMode') || 'Product Name';
   });
@@ -307,11 +308,26 @@ export function PurchaseInvoice() {
     const product = products.find(p => p.id === parseInt(productId));
     if (!product) return;
 
+    if (settings?.negativeStockLock) {
+      if (1 > (product.stock || 0)) {
+        alert('Negative Stock Lock is enabled. Insufficient stock!');
+        return;
+      }
+    }
+
     // We identify a unique row by productId AND variant name (if present)
     const existingIndex = rows.findIndex((r, i) => i !== index && parseInt(r.productId) === product.id && r.variantName === (variant?.name || ""));
 
     if (existingIndex !== -1) {
       // Product already in list — increment its qty, reset current row to empty
+      if (settings?.negativeStockLock) {
+        const currentQty = Number(rows[existingIndex].qty) || 0;
+        if (currentQty + 1 > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+      
       const newRows = [...rows];
       newRows[existingIndex] = { 
         ...newRows[existingIndex], 
@@ -365,6 +381,17 @@ export function PurchaseInvoice() {
   const [priceWarnings, setPriceWarnings] = useState({});
 
   const updateRow = (index, field, value) => {
+    if (settings?.negativeStockLock && ['qty', 'primaryOpeningQty', 'secOpeningQty'].includes(field)) {
+      const productId = rows[index].productId;
+      if (productId) {
+        const product = products.find(p => p.id === parseInt(productId));
+        if (product && Number(value) > (product.stock || 0)) {
+          alert('Negative Stock Lock is enabled. Insufficient stock!');
+          return;
+        }
+      }
+    }
+
     const newRows = [...rows];
     newRows[index][field] = value;
     
@@ -528,7 +555,13 @@ export function PurchaseInvoice() {
     }
 
     const pQty = calculatedQty;
-    totalQty += pQty + pFree;
+    let visibleRowQty = 0;
+    if (settings?.primaryOpeningQty) {
+      visibleRowQty = (Number(row.primaryOpeningQty) || 0);
+    } else {
+      visibleRowQty = (Number(row.qty) || 0);
+    }
+    totalQty += visibleRowQty + pFree;
     
     const rowBaseAmount = pQty * actualPriceToUse;
     baseAmount += rowBaseAmount;
@@ -732,19 +765,8 @@ export function PurchaseInvoice() {
     try {
       const res = await apiClient.post(`/inventory/${transactionType}`, payload);
       if (res.data) {
-        alert("Purchase Invoice Saved Successfully!");
         setIsPaymentStatusModalOpen(false);
-        setRows([createEmptyRow()]);
-        setSelectedSupplierId("");
-        setSupplierInput("");
-        setRemark("");
-        setInvoiceNo("");
-        setManualDiscPercent("");
-        setManualDiscAmount("");
-        setManualFreightAmt("");
-        setManualFreightGst("");
-        setManualTcsPercent("");
-        setManualTcsAmt("");
+        setShowBarcodePrintModal(true);
       }
     } catch (err) {
       alert("Error saving transaction.");
@@ -1344,7 +1366,7 @@ export function PurchaseInvoice() {
                      <span className="absolute -top-[18px] left-0 text-[11px] font-bold text-gray-800">Dis.%</span>
                      <div className="relative">
                        <input 
-                         type="text" 
+                         type="number" 
                          value={manualDiscPercent !== "" ? manualDiscPercent : ""}
                          placeholder="0"
                          onChange={(e) => {
@@ -1355,36 +1377,13 @@ export function PurchaseInvoice() {
                              setManualDiscAmount('');
                            }
                          }}
-                         onFocus={() => setShowSummaryDiscDropdown(true)}
-                         onBlur={() => setTimeout(() => setShowSummaryDiscDropdown(false), 200)}
-                         className="w-full border border-gray-300 rounded-[3px] py-1 pl-2 pr-6 text-[13px] text-right text-blue-700 font-bold" 
+                         className="w-full border border-gray-300 rounded-[3px] py-1 px-2 text-[13px] text-right text-blue-700 font-bold outline-none bg-white" 
                        />
-                       <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600 text-[10px]">
-                         ▼
-                       </div>
                      </div>
-                     {showSummaryDiscDropdown && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-lg z-50 rounded-b-[3px] mt-[1px]">
-                          {[5, 12, 18, 28].map(val => (
-                            <div 
-                              key={val} 
-                              className="px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-center text-[13px] text-gray-800 font-bold border-b border-gray-100 last:border-0"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                setManualDiscPercent(val);
-                                setManualDiscAmount((baseAmount * Number(val) / 100).toFixed(2));
-                                setShowSummaryDiscDropdown(false);
-                              }}
-                            >
-                              {val}
-                            </div>
-                          ))}
-                        </div>
-                     )}
                    </div>
                    <div className="flex-1 relative mt-[18px]">
                      <span className="absolute -top-[18px] left-0 text-[11px] font-bold text-gray-800">Dis. Amt</span>
-                     <input type="number" value={manualDiscAmount !== "" ? manualDiscAmount : (totalRowDiscount > 0 ? totalRowDiscount.toFixed(2) : "")} placeholder="0.00" onChange={(e) => setManualDiscAmount(e.target.value)} className="w-full border border-gray-300 rounded-[3px] px-2 py-1 text-[13px] text-right text-blue-700 font-bold" />
+                     <input type="number" value={manualDiscAmount !== "" ? manualDiscAmount : (totalRowDiscount > 0 ? totalRowDiscount.toFixed(2) : "")} placeholder="0.00" onChange={(e) => setManualDiscAmount(e.target.value)} className="w-full border border-gray-300 rounded-[3px] px-2 py-1 text-[13px] text-right text-blue-700 font-bold outline-none bg-white" />
                    </div>
                  </div>
                </div>
@@ -1687,7 +1686,7 @@ export function PurchaseInvoice() {
             setIsQuantityCalcOpen(false);
             setActiveQuantityRow(null);
           }}
-          initialData={{
+           initialData={{
              productName: rows[activeQuantityRow]?.productName || products.find(p => p.id === parseInt(rows[activeQuantityRow]?.productId))?.name || 'Unknown Item',
              hsn: rows[activeQuantityRow]?.hsn,
              rollQty: rows[activeQuantityRow]?.rollQty,
@@ -1696,6 +1695,7 @@ export function PurchaseInvoice() {
              price: rows[activeQuantityRow]?.price,
              disc1: rows[activeQuantityRow]?.disc1,
              taxRate: rows[activeQuantityRow]?.taxRate,
+             isGstInclusive: rows[activeQuantityRow]?.isGstInclusive,
           }}
           onSave={(calcData) => {
              const newRows = [...rows];
@@ -1704,15 +1704,57 @@ export function PurchaseInvoice() {
                rollQty: calcData.rollQty,
                meterPerRoll: calcData.meterPerRoll,
                qty: calcData.qty,
+               primaryOpeningQty: calcData.qty,
+               secOpeningQty: 0,
                price: calcData.price,
                disc1: calcData.disc1,
                taxRate: calcData.taxRate,
+               isGstInclusive: calcData.isGstInclusive,
              };
              setRows(newRows);
              setIsQuantityCalcOpen(false);
              setActiveQuantityRow(null);
           }}
         />
+      )}
+
+      {showBarcodePrintModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[5px] shadow-2xl w-full max-w-[420px] overflow-hidden flex flex-col p-8 text-center animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-[80px] h-[80px] border-[3px] border-[#87adbd] rounded-full flex items-center justify-center mb-6">
+              <span className="text-[#87adbd] text-[40px] font-medium leading-none">?</span>
+            </div>
+            <h2 className="text-[24px] font-bold text-[#545454] mb-8 leading-tight">
+              Do you want to print the barcode<br/>of this invoice?
+            </h2>
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={() => {
+                  const itemsToPrint = calculatedRows.filter(r => r.productId && r.qty > 0).map(r => ({
+                    productId: r.productId,
+                    name: r.productName || products.find(p => p.id === parseInt(r.productId))?.name,
+                    barcode: r.barcode || products.find(p => p.id === parseInt(r.productId))?.barcode || '',
+                    quantity: r.qty,
+                    salePrice: r.salePrice || r.price,
+                    mrp: r.mrp || r.price
+                  }));
+                  navigate('/admin/barcode', { state: { invoiceItems: itemsToPrint } });
+                }}
+                className="bg-[#3085d6] hover:bg-[#2874ba] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
+              >
+                Yes, Print Barcode!
+              </button>
+              <button 
+                onClick={() => {
+                  setShowBarcodePrintModal(false);
+                }}
+                className="bg-[#d33] hover:bg-[#b02a2a] text-white px-5 py-2.5 rounded-[4px] text-[15px] font-medium transition-colors"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -53,16 +53,31 @@ export function StockDetails() {
   const [expandedBrands, setExpandedBrands] = useState(new Set());
   const [viewModalData, setViewModalData] = useState(null);
   const [averagePrice, setAveragePrice] = useState(null);
+  const [averageSalePrice, setAverageSalePrice] = useState(null);
+  const [totalAveragePrice, setTotalAveragePrice] = useState(null);
+  const [priceWiseStock, setPriceWiseStock] = useState([]);
+  const [totalPurchaseQty, setTotalPurchaseQty] = useState(0);
+  const [totalSaleQty, setTotalSaleQty] = useState(0);
   const [isLoadingAvgPrice, setIsLoadingAvgPrice] = useState(false);
 
   const handleViewModal = async (item) => {
     setViewModalData(item);
     setAveragePrice(null);
+    setAverageSalePrice(null);
+    setTotalAveragePrice(null);
+    setPriceWiseStock([]);
+    setTotalPurchaseQty(0);
+    setTotalSaleQty(0);
     setIsLoadingAvgPrice(true);
     try {
       const res = await apiClient.get(`/products/${item.id}/average-price`);
       if (res.data && res.data.success) {
         setAveragePrice(res.data.averagePrice);
+        setAverageSalePrice(res.data.averageSalePrice);
+        setTotalAveragePrice(res.data.totalAveragePrice);
+        setPriceWiseStock(res.data.priceWiseStock || []);
+        setTotalPurchaseQty(res.data.totalPurchaseQty || 0);
+        setTotalSaleQty(res.data.totalSaleQty || 0);
       } else {
         setAveragePrice(item.price || 0);
       }
@@ -502,19 +517,19 @@ export function StockDetails() {
                     </div>
                     
                     <div className="text-right">
-                      <div className="text-[13px] text-gray-600">
+                      <div className="text-[13px] text-gray-600 flex justify-end items-center gap-1">
                         {(item.qty != null || item.stock != null) && (
                           <>P.QTY : <span className="font-bold text-gray-800">{item.stock ?? item.qty} {item.baseUnit?.toLowerCase() || item.purchaseUnit}</span> <span className="text-gray-300 mx-1">|</span> </>
                         )}
                         value : <span className="font-bold text-gray-800">{formatAmount((item.purchasePrice || 0) * (item.stock ?? item.qty ?? 0)).replace('₹', '')}</span>
                       </div>
-                      <div className="text-[12px] text-gray-500 mt-1 flex justify-end gap-3">
-                        {item.secOpeningQty != null && (
-                          <span>S.QTY : <span className="font-bold text-gray-700">{item.secOpeningQty} {item.salesUnit}</span></span>
-                        )}
+                      <div className="text-[13px] text-gray-600 flex justify-end mt-0.5">
+                        S.QTY : <span className="font-bold text-gray-800 ml-1">{item.secOpeningQty || 0} {item.salesUnit?.toUpperCase() || 'PCS'}</span>
                       </div>
-                      <div className="text-[11px] text-gray-500 mt-2">
-                        HSN : <span className="text-blue-500">{item.hsnCode || '+Add'}</span> <span className="text-gray-300 mx-1">|</span> GST : {parseInt(item.tax) || 0} <span className="text-gray-300 mx-1">|</span> TAXABLE : {formatAmount(((item.purchasePrice || 0) * (item.stock ?? item.qty ?? 0)) * 100 / (100 + (parseInt(item.tax) || 0))).replace('₹', '')}
+                      <div className="text-[12px] text-gray-500 mt-1 flex justify-end gap-3">
+                        <span>HSN : <span className="font-bold text-[#007bff]">{item.hsnCode}</span> <span className="text-gray-300 mx-1">|</span></span>
+                        <span>GST : <span className="font-bold text-gray-700">{item.tax || 0}</span> <span className="text-gray-300 mx-1">|</span></span>
+                        <span>TAXABLE : <span className="font-bold text-gray-700">{formatAmount(((item.purchasePrice || 0) * (item.stock ?? item.qty ?? 0)) / (1 + (item.tax || 0) / 100)).replace('₹', '')}</span></span>
                       </div>
                     </div>
                   </div>
@@ -599,7 +614,16 @@ export function StockDetails() {
             </div>
             
             <div className="p-4 bg-white">
-              
+              {/* Total Qty Section */}
+              <div className="flex justify-between mb-4 mt-2 px-2 border-b border-gray-100 pb-2">
+                <div className="text-[13px] text-gray-700">
+                  Total Purchased: <span className="font-bold text-gray-900">{isLoadingAvgPrice ? '...' : totalPurchaseQty} {viewModalData.baseUnit?.toLowerCase()}</span>
+                </div>
+                <div className="text-[13px] text-gray-700">
+                  Total Sold: <span className="font-bold text-gray-900">{isLoadingAvgPrice ? '...' : totalSaleQty} {viewModalData.baseUnit?.toLowerCase()}</span>
+                </div>
+              </div>
+
               <table className="w-full border-collapse border border-gray-200 text-center mb-4">
                 <thead>
                   <tr className="bg-white border-b border-gray-200">
@@ -609,25 +633,49 @@ export function StockDetails() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">
-                      {viewModalData.stock} {viewModalData.baseUnit?.toLowerCase()} @ {isLoadingAvgPrice ? '...' : Number(averagePrice || viewModalData.price || 0).toFixed(2)}
-                    </td>
-                    <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">
-                      {isLoadingAvgPrice ? '...' : formatAmount(viewModalData.stock * (averagePrice || viewModalData.price || 0)).replace('₹', '')}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className={`${viewModalData.stock > 0 ? 'bg-[#28a745]' : 'bg-[#dc3545]'} text-white text-[10px] font-bold py-1 px-2 rounded-[2px] w-[90%] mx-auto shadow-sm`}>
-                        {viewModalData.stock > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
-                      </div>
-                    </td>
-                  </tr>
+                  {priceWiseStock && priceWiseStock.length > 0 ? (
+                    priceWiseStock.map((batch, idx) => (
+                      <tr key={idx} className="border-b border-gray-200">
+                        <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">
+                          {batch.qty} {viewModalData.baseUnit?.toLowerCase()} @ {Number(batch.price).toFixed(2)} {batch.isOpening ? '(Opening)' : ''}
+                        </td>
+                        <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">
+                          {formatAmount(batch.amount).replace('₹', '')}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className={`bg-[#28a745] text-white text-[10px] font-bold py-1 px-2 rounded-[2px] w-[90%] mx-auto shadow-sm`}>
+                            IN STOCK
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr className="border-b border-gray-200">
+                      <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">
+                        {viewModalData.stock} {viewModalData.baseUnit?.toLowerCase()} @ {isLoadingAvgPrice ? '...' : Number(averagePrice || viewModalData.price || 0).toFixed(2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-gray-700 text-[14px] border-r border-gray-200">
+                        {isLoadingAvgPrice ? '...' : formatAmount(viewModalData.stock * (averagePrice || viewModalData.price || 0)).replace('₹', '')}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className={`${viewModalData.stock > 0 ? 'bg-[#28a745]' : 'bg-[#dc3545]'} text-white text-[10px] font-bold py-1 px-2 rounded-[2px] w-[90%] mx-auto shadow-sm`}>
+                          {viewModalData.stock > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
-              <div className="flex justify-center mb-2">
+              <div className="flex justify-center gap-4 mb-4">
+                <div className="bg-[#17a2b8] text-white px-3 py-1.5 rounded-[4px] font-bold text-[14px] shadow-sm">
+                  {isLoadingAvgPrice ? 'Calculating...' : `Total Avg Price: ${Number(totalAveragePrice || viewModalData.purchasePrice || 0).toFixed(2)}`}
+                </div>
                 <div className="bg-[#007bff] text-white px-3 py-1.5 rounded-[4px] font-bold text-[14px] shadow-sm">
-                  {isLoadingAvgPrice ? 'Calculating Average...' : `Average Price: ${Number(averagePrice || viewModalData.price || 0).toFixed(2)}`}
+                  {isLoadingAvgPrice ? 'Calculating...' : `Avg Purchase Price: ${Number(averagePrice || viewModalData.purchasePrice || 0).toFixed(2)}`}
+                </div>
+                <div className="bg-[#28a745] text-white px-3 py-1.5 rounded-[4px] font-bold text-[14px] shadow-sm">
+                  {isLoadingAvgPrice ? 'Calculating...' : `Avg Sale Price: ${Number(averageSalePrice || viewModalData.price || 0).toFixed(2)}`}
                 </div>
               </div>
             </div>

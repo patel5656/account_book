@@ -12,10 +12,27 @@ export function SaleSummary() {
   const [period, setPeriod] = useState('Select');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [customers, setCustomers] = useState([]);
+  const [isPartyFilterOn, setIsPartyFilterOn] = useState(false);
+  const [selectedParty, setSelectedParty] = useState('');
 
   useEffect(() => {
     fetchInvoices();
+    fetchCustomers();
   }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await apiClient.get('/customers');
+      if (res.data.data) {
+        setCustomers(res.data.data);
+      } else if (Array.isArray(res.data)) {
+        setCustomers(res.data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const fetchInvoices = async () => {
     try {
@@ -90,14 +107,21 @@ export function SaleSummary() {
   };
 
   const invoices = allInvoices.filter(inv => {
-    if (!startDate || !endDate) return true;
-    const invDate = new Date(inv.date);
-    invDate.setHours(0,0,0,0);
-    const start = new Date(startDate);
-    start.setHours(0,0,0,0);
-    const end = new Date(endDate);
-    end.setHours(23,59,59,999);
-    return invDate >= start && invDate <= end;
+    if (startDate && endDate) {
+      const invDate = new Date(inv.date);
+      invDate.setHours(0,0,0,0);
+      const start = new Date(startDate);
+      start.setHours(0,0,0,0);
+      const end = new Date(endDate);
+      end.setHours(23,59,59,999);
+      if (invDate < start || invDate > end) return false;
+    }
+    
+    if (isPartyFilterOn && selectedParty) {
+      if (inv.customerId?.toString() !== selectedParty) return false;
+    }
+    
+    return true;
   });
 
   const totalSale = invoices.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
@@ -242,13 +266,27 @@ export function SaleSummary() {
             {/* Party Name */}
             <div className="flex flex-col gap-1 w-full max-w-[min(92vw,500px)]">
               <div className="flex flex-wrap items-center gap-2 px-1">
-                <div className="w-[32px] h-[16px] bg-gray-300 rounded-full relative cursor-pointer border border-gray-400">
-                  <div className="w-[12px] h-[12px] bg-white rounded-full absolute top-[1px] left-[1px]"></div>
+                <div 
+                  className={`w-[32px] h-[16px] rounded-full relative cursor-pointer border transition-colors ${isPartyFilterOn ? 'bg-[#4F46E5] border-[#4F46E5]' : 'bg-gray-300 border-gray-400'}`}
+                  onClick={() => {
+                    setIsPartyFilterOn(!isPartyFilterOn);
+                    if (isPartyFilterOn) setSelectedParty('');
+                  }}
+                >
+                  <div className={`w-[12px] h-[12px] bg-white rounded-full absolute top-[1px] transition-all ${isPartyFilterOn ? 'right-[1px]' : 'left-[1px]'}`}></div>
                 </div>
                 <label className="text-[13px] font-bold text-gray-800">Party Name</label>
               </div>
-              <select className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-400 bg-white">
-                <option>Select Name</option>
+              <select 
+                disabled={!isPartyFilterOn}
+                value={selectedParty}
+                onChange={(e) => setSelectedParty(e.target.value)}
+                className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-gray-700 bg-white disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                <option value="">Select Name</option>
+                {customers.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
               </select>
             </div>
 
