@@ -702,16 +702,23 @@ export function SalesInvoice() {
     
     const amount = Math.max(0, rowBaseAmount - rowDisc);
 
-    const gstRate = Number(row.taxRate) || 0;
+    let gstRate = Number(row.taxRate) || 0;
     let gstAmount = 0;
-    if (isTaxIncluded) {
-      gstAmount = amount - (amount / (1 + gstRate / 100));
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
+
+    if (!isCustomerChallan && !isCustomerInvoice) {
+      if (isTaxIncluded) {
+        gstAmount = amount - (amount / (1 + gstRate / 100));
+      } else {
+        gstAmount = amount * (gstRate / 100);
+      }
+      cgst = gstAmount / 2;
+      sgst = gstAmount / 2;
     } else {
-      gstAmount = amount * (gstRate / 100);
+      gstRate = 0;
     }
-    const cgst = gstAmount / 2;
-    const sgst = gstAmount / 2;
-    const igst = 0;
 
     totalGstAmount += gstAmount;
     totalCgst += cgst;
@@ -1170,7 +1177,33 @@ export function SalesInvoice() {
                   }}
                 />
               </div>
-              <button title="Click here to view the Latest invoice of the selected party" onClick={() => alert("Click here to view the Latest invoice of the selected party")} className="bg-[#17a2b8] hover:bg-[#138496] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-center shadow-sm h-[32px] transition-colors">
+              <button 
+                title="Click here to view the Latest invoice items of the selected party" 
+                onClick={async () => {
+                  if (!selectedCustomerId) {
+                    alert("Please select a party first.");
+                    return;
+                  }
+                  try {
+                    const res = await apiClient.get(`/inventory/sales?customerId=${selectedCustomerId}`);
+                    if (res.data.data && res.data.data.length > 0) {
+                      const latestInvoice = res.data.data[0];
+                      if (latestInvoice.items && latestInvoice.items.length > 0) {
+                        const itemNames = latestInvoice.items.map(item => `${item.product?.name || 'Unknown'} (Qty: ${item.quantity || 0})`).join('\n');
+                        alert(`Latest Invoice Items:\n\n${itemNames}`);
+                      } else {
+                        alert("The latest invoice has no items.");
+                      }
+                    } else {
+                      alert("No previous invoice found for this party.");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed to fetch latest invoice.");
+                  }
+                }}
+                className="bg-[#17a2b8] hover:bg-[#138496] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-center shadow-sm h-[32px] transition-colors"
+              >
                 <Search className="w-4 h-4" strokeWidth={3} />
               </button>
               <button 

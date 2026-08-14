@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   X, 
   Search, 
@@ -22,6 +22,8 @@ import { createTransaction, getTransactionById, deleteTransaction } from '../api
 
 export function PosBilling() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('id');
   
   // States
   const [settings, setSettings] = useState(null);
@@ -177,26 +179,27 @@ export function PosBilling() {
   const [products, setProducts] = useState([]);
   const [quickItems, setQuickItems] = useState([]);
 
-  useEffect(() => {
-    const fetchPOSData = async () => {
-      try {
-        const prodRes = await apiClient.get('/products');
-        if (prodRes.data.success) {
-          const activeProducts = prodRes.data.data.filter(p => p.status === 'Active' || p.status === 'ACTIVE');
-          setProducts(activeProducts);
-        }
-        
-        const quickRes = await apiClient.get('/pos/quick-items');
-        if (quickRes.data.success) setQuickItems(quickRes.data.data);
-
-        const settingsRes = await apiClient.get('/settings');
-        if (settingsRes.data?.success && settingsRes.data.data) {
-          setSettings(settingsRes.data.data);
-        }
-      } catch (err) {
-        console.error("Failed to load POS data:", err);
+  const fetchPOSData = async () => {
+    try {
+      const prodRes = await apiClient.get('/products');
+      if (prodRes.data.success) {
+        const activeProducts = prodRes.data.data.filter(p => p.status === 'Active' || p.status === 'ACTIVE');
+        setProducts(activeProducts);
       }
-    };
+      
+      const quickRes = await apiClient.get('/pos/quick-items');
+      if (quickRes.data.success) setQuickItems(quickRes.data.data);
+
+      const settingsRes = await apiClient.get('/settings');
+      if (settingsRes.data?.success && settingsRes.data.data) {
+        setSettings(settingsRes.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load POS data:", err);
+    }
+  };
+
+  useEffect(() => {
     fetchPOSData();
   }, []);
 
@@ -439,7 +442,8 @@ export function PosBilling() {
           ? [
               { mode: 'Cash', amount: Number(splitAmounts.Cash) || 0 },
               { mode: 'Card', amount: Number(splitAmounts.Card) || 0 },
-              { mode: 'UPI', amount: Number(splitAmounts.UPI) || 0 }
+              { mode: 'UPI', amount: Number(splitAmounts.UPI) || 0 },
+              { mode: 'Credit', amount: Number(splitAmounts.Credit) || 0 }
             ].filter(p => p.amount > 0)
           : [{ mode: paymentMode, amount: finalAmount }],
         totalAmount: finalAmount,
@@ -500,7 +504,11 @@ export function PosBilling() {
         if (invoice.customerId) {
            setCustomerId(invoice.customerId);
            const cust = allCustomers.find(c => c.id === invoice.customerId);
-           if (cust) setCustomerName(cust.name);
+           if (cust) {
+             setCustomerName(cust.name);
+           } else if (invoice.customer && invoice.customer.name) {
+             setCustomerName(invoice.customer.name);
+           }
         } else {
            setCustomerId(null);
            setCustomerName("");
@@ -515,6 +523,12 @@ export function PosBilling() {
       alert("Failed to load held bill.");
     }
   };
+
+  useEffect(() => {
+    if (editId) {
+      loadHeldInvoice(editId);
+    }
+  }, [editId]);
 
   const handleHoldBill = async () => {
     if (cart.length === 0) {
@@ -1311,14 +1325,9 @@ export function PosBilling() {
 
             const res = await apiClient.post('/products', payload);
             if (res.data.success) {
+              await fetchPOSData(); // Re-fetch from DB to ensure sync
               const savedProduct = res.data.data;
-              savedProduct.qty = savedProduct.stock;
-              savedProduct.hasBom = Boolean(savedProduct.hasBom);
-              savedProduct.synced = true;
-              setProducts(prev => [savedProduct, ...prev]);
-              if (newItem.isQuickItem) {
-                setQuickItems(prev => [savedProduct, ...prev]);
-              }
+              addToCart(savedProduct); // Automatically add to cart
             }
           } catch (error) {
             console.error('Failed to save product from POS:', error);

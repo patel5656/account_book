@@ -1,9 +1,9 @@
 import React from 'react';
 
 const shortcuts = [
-  { key: 'Shift + ?', label: 'Global Search' },
-  { key: 'Ctrl + S', label: 'Credit Invoice' },
-  { key: 'F4', label: 'Cash Invoice' },
+  { key: 'Esc', label: 'Back' },
+  { key: 'Ctrl + S', label: 'Sales Invoice' },
+  { key: 'F4', label: 'POS' },
   { key: 'Ctrl + P', label: 'Purchase Invoice' },
   { key: 'F1', label: 'Stock Details' },
   { key: 'Ctrl + E', label: 'Expense ledger' },

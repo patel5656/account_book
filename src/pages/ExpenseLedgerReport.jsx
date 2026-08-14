@@ -46,8 +46,24 @@ export function ExpenseLedgerReport() {
   useEffect(() => {
     if (selectedExpenseId) {
       fetchTransactions(selectedExpenseId);
+    } else {
+      fetchAllTransactions();
     }
   }, [selectedExpenseId]);
+
+  const fetchAllTransactions = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.get('/expenses/transactions/all');
+      if (res.data.success) {
+        setTransactions(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch all transactions:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchTransactions = async (id) => {
     setLoading(true);
@@ -260,7 +276,7 @@ export function ExpenseLedgerReport() {
                 <div className="p-4 text-center text-gray-500 text-sm font-medium">Loading transactions...</div>
               ) : filteredData.length === 0 ? (
                 <div className="p-4 text-center text-gray-500 text-sm font-medium">
-                  {selectedExpenseId ? "No transactions found for the selected period." : "Please select an Expense Head to view transactions."}
+                  No transactions found for the selected period.
                 </div>
               ) : (
                 filteredData.map((item, index) => (

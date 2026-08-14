@@ -27,6 +27,8 @@ export function CustomerLedger() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDiscount, setPaymentDiscount] = useState('');
   const [paymentRemark, setPaymentRemark] = useState('');
+  const [paymentMode, setPaymentMode] = useState('Cash');
+  const [banks, setBanks] = useState([]);
   const [showUnpaidModal, setShowUnpaidModal] = useState(false);
 
   const formatDisplayDate = (dateString) => {
@@ -129,6 +131,7 @@ export function CustomerLedger() {
   };
   useEffect(() => {
     fetchCustomers();
+    fetchBanks();
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
@@ -137,6 +140,17 @@ export function CustomerLedger() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const fetchBanks = async () => {
+    try {
+      const res = await apiClient.get('/banks');
+      if (res.data.success) {
+        setBanks(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch banks', err);
+    }
+  };
 
   // Auto-select customer if navigated from CustomerOutstanding
   useEffect(() => {
@@ -198,7 +212,7 @@ export function CustomerLedger() {
         discount: parseFloat(paymentDiscount) || 0,
         remark: paymentRemark,
         paymentType: isPaymentIn ? 'IN' : 'OUT',
-        paymentMode: 'Cash'
+        paymentMode: paymentMode
       };
       const res = await apiClient.post(`/ledger/${selectedCustomer.id}/payment`, payload);
       if (res.data.success) {
@@ -438,12 +452,15 @@ export function CustomerLedger() {
         <div className="flex-1 overflow-x-auto overflow-y-hidden min-h-0 w-full">
           <div className="min-w-[900px] flex flex-col h-full">
             {/* Table Header */}
-            <div className="bg-[#343a40] text-white grid grid-cols-[50px_110px_1fr_100px_100px_110px_70px_100px_120px] text-center border-b border-gray-600">
+            <div className="bg-[#343a40] text-white grid grid-cols-[50px_110px_100px_1fr_100px_100px_110px_70px_100px_120px] text-center border-b border-gray-600">
               <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
                 #
               </div>
               <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
                 DATE
+              </div>
+              <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
+                Mode
               </div>
               <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
                 Other Information
@@ -478,7 +495,7 @@ export function CustomerLedger() {
 
             {/* Render added entries */}
             {entries.map((entry, index) => (
-              <div key={entry.id} className={`grid grid-cols-[50px_110px_1fr_100px_100px_110px_70px_100px_120px] border-b border-gray-200 ${
+              <div key={entry.id} className={`grid grid-cols-[50px_110px_100px_1fr_100px_100px_110px_70px_100px_120px] border-b border-gray-200 ${
                 entry.type === 'PAYMENT_IN' ? 'bg-[#f0fff4]' :
                 entry.type === 'PAYMENT_OUT' ? 'bg-[#fff5f5]' :
                 entry.type === 'SALES_RETURN' ? 'bg-[#fffbf0]' : 'bg-white'
@@ -488,6 +505,9 @@ export function CustomerLedger() {
                 </div>
                 <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">
                   {formatDateMMM(entry.date)}
+                </div>
+                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600 font-bold">
+                  {entry.paymentMode || 'Cash'}
                 </div>
                 <div className="border-r border-gray-200 p-1.5 flex flex-col justify-center text-[13px] text-center">
                   {entry.type === 'INVOICE' ? (
@@ -562,7 +582,7 @@ export function CustomerLedger() {
             ))}
 
             {/* Input Row */}
-            <div className="grid grid-cols-[50px_110px_1fr_100px_100px_110px_70px_100px_120px] bg-white border-b border-gray-200 no-print">
+            <div className="grid grid-cols-[50px_110px_100px_1fr_100px_100px_110px_70px_100px_120px] bg-white border-b border-gray-200 no-print">
               <div className="border-r border-gray-200 flex items-center justify-center p-1 bg-[#343a40]">
                 <input type="checkbox" className="w-3.5 h-3.5" />
                 <span className="text-white text-[12px] font-bold ml-1">#</span>
@@ -593,6 +613,18 @@ export function CustomerLedger() {
                 >
                   <Calendar className="w-4 h-4" />
                 </button>
+              </div>
+              <div className="border-r border-gray-200 p-1 flex items-center">
+                 <select
+                   value={paymentMode}
+                   onChange={e => setPaymentMode(e.target.value)}
+                   className="w-full h-[32px] px-1 text-[13px] outline-none text-gray-700 bg-white border border-gray-300 focus:border-[#4F46E5] rounded-[3px] cursor-pointer"
+                 >
+                   <option value="Cash">Cash</option>
+                   {banks.map(b => (
+                     <option key={b.id} value={b.name}>{b.name}</option>
+                   ))}
+                 </select>
               </div>
               <div className="border-r border-gray-200 p-1 flex items-center">
                  <input type="text" value={paymentRemark} onChange={e => setPaymentRemark(e.target.value)} placeholder="Enter Other Information" className="w-full h-[32px] px-2 text-[13px] outline-none text-center placeholder-gray-400" />
@@ -634,8 +666,8 @@ export function CustomerLedger() {
             </div>
 
             {/* Total Row */}
-            <div className="grid grid-cols-[50px_110px_1fr_100px_100px_110px_70px_100px_120px] bg-white border-b border-gray-200 mt-auto">
-              <div className="col-span-4 border-r border-gray-200 p-2 flex items-center justify-end">
+            <div className="grid grid-cols-[50px_110px_100px_1fr_100px_100px_110px_70px_100px_120px] bg-white border-b border-gray-200 mt-auto">
+              <div className="col-span-5 border-r border-gray-200 p-2 flex items-center justify-end">
                 <span className="font-bold text-[14px] text-gray-800">Total</span>
               </div>
               <div className="border-r border-gray-200 p-2 flex items-center justify-center">

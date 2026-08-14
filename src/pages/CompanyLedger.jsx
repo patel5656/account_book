@@ -20,11 +20,11 @@ export function CompanyLedger() {
   const dateInputRef = useRef(null);
   const [isPaymentOut, setIsPaymentOut] = useState(true);
   
-  const [companies, setCompanies] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDiscount, setPaymentDiscount] = useState('');
   const [paymentRemark, setPaymentRemark] = useState('');
+  const [paymentMode, setPaymentMode] = useState('Cash');
+  const [banks, setBanks] = useState([]);
 
   const formatDisplayDate = (dateString) => {
     if (!dateString) return "";
@@ -80,6 +80,7 @@ export function CompanyLedger() {
   
   useEffect(() => {
     fetchCompanies();
+    fetchBanks();
     if (location.state?.company) {
       handleSelectCompany(location.state.company);
       // Optional: clear state so refresh doesn't keep it
@@ -93,6 +94,17 @@ export function CompanyLedger() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const fetchBanks = async () => {
+    try {
+      const res = await apiClient.get('/banks');
+      if (res.data.success) {
+        setBanks(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch banks', err);
+    }
+  };
 
   const fetchCompanies = async () => {
     try {
@@ -136,7 +148,7 @@ export function CompanyLedger() {
         discount: parseFloat(paymentDiscount) || 0,
         remark: paymentRemark,
         paymentType: isPaymentOut ? 'OUT' : 'IN',
-        paymentMode: 'Cash'
+        paymentMode: paymentMode
       };
       const res = await apiClient.post(`/ledger/${selectedCompany.id}/payment`, payload);
       if (res.data.success) {
@@ -337,6 +349,9 @@ export function CompanyLedger() {
                 DATE
               </div>
               <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
+                Mode
+              </div>
+              <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
                 Other Information
               </div>
               <div className="border-r border-gray-600 py-2.5 text-[13px] font-bold flex items-center justify-center">
@@ -369,118 +384,42 @@ export function CompanyLedger() {
 
             {/* Render added entries */}
             {entries.map((entry, index) => (
-              <div key={entry.id} className="grid grid-cols-[50px_130px_1fr_100px_100px_130px_70px_100px_80px] bg-white border-b border-gray-200">
-                <div className="border-r border-gray-200 flex items-center justify-center p-1 bg-gray-100 text-[13px]">
-                  {index + 1}
-                </div>
-                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">
-                  {new Date(entry.date).toLocaleDateString()}
-                </div>
-                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">
-                  {entry.remark || '-'}
-                </div>
-                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">
-                  {entry.voucherNo || '-'}
-                </div>
-                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] font-bold text-gray-800">
-                  {entry.type === 'INVOICE' && entry.amount > 0 ? entry.amount.toFixed(2) : '-'}
-                </div>
-                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] font-bold text-[#dc3545]">
-                  {entry.paymentIn > 0 ? <span className="text-[#28a745]">(IN) {entry.paymentIn.toFixed(2)}</span> : (entry.type === 'PAYMENT_OUT' ? entry.amount.toFixed(2) : '-')}
-                </div>
-                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">
-                  {entry.discount > 0 ? entry.discount.toFixed(2) : '-'}
-                </div>
-                <div className={`border-r border-gray-200 p-1 flex items-center justify-center text-[13px] font-bold ${entry.balance < 0 ? 'text-[#28a745]' : 'text-[#dc3545]'}`}>
-                  {settings.accountingFormat ? (
-                    <>{Math.abs(entry.balance).toFixed(2)} {entry.balance < 0 ? 'Cr' : 'Dr'}</>
-                  ) : (
-                    <>{entry.balance.toFixed(2)}</>
-                  )}
-                </div>
-                <div className="p-1 flex items-center justify-center bg-gray-50">
-                  <button className="text-red-500 hover:text-red-700">
-                    <Trash2 className="w-4 h-4" strokeWidth={2.5} />
-                  </button>
-                </div>
+              <div key={entry.id} className="grid grid-cols-[50px_110px_100px_1fr_100px_100px_110px_70px_100px_120px] bg-white border-b border-gray-200">
+                <div className="border-r border-gray-200 flex items-center justify-center p-1 bg-gray-100 text-[13px]">{index + 1}</div>
+                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">{formatDateMMM(entry.date)}</div>
+                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600 font-bold">{entry.paymentMode || 'Cash'}</div>
+                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">{entry.remark || '-'}</div>
+                <div className="border-r border-gray-200 p-1.5 flex flex-col justify-center text-[13px] text-center">{entry.voucherNo || '-'}</div>
+                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] font-bold text-gray-800">{entry.type === 'INVOICE' && entry.amount > 0 ? entry.amount.toFixed(2) : '-'}</div>
+                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] font-bold text-[#dc3545]">{entry.paymentIn > 0 ? <span className="text-[#28a745]">(IN) {entry.paymentIn.toFixed(2)}</span> : (entry.type === 'PAYMENT_OUT' ? entry.amount.toFixed(2) : '-')}</div>
+                <div className="border-r border-gray-200 p-1 flex items-center justify-center text-[13px] text-gray-600">{entry.discount > 0 ? entry.discount.toFixed(2) : '-'}</div>
+                <div className={`border-r border-gray-200 p-1 flex items-center justify-center text-[13px] font-bold ${entry.balance < 0 ? 'text-[#28a745]' : 'text-[#dc3545]'}`}>{settings.accountingFormat ? (<>{Math.abs(entry.balance).toFixed(2)} {entry.balance < 0 ? 'Cr' : 'Dr'}</>) : (<>{entry.balance.toFixed(2)}</>)}</div>
+                <div className="p-1 flex items-center justify-center bg-gray-50"><button className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" strokeWidth={2.5} /></button></div>
               </div>
             ))}
 
             {/* Input Row */}
-            <div className="grid grid-cols-[50px_130px_1fr_100px_100px_130px_70px_100px_80px] bg-white border-b border-gray-200 no-print">
-              <div className="border-r border-gray-200 flex items-center justify-center p-1 bg-[#343a40]">
-                <input type="checkbox" className="w-3.5 h-3.5" />
-                <span className="text-white text-[12px] font-bold ml-1">#</span>
-              </div>
-              <div className="border-r border-gray-200 p-1 flex items-center relative">
-                <input 
-                  ref={dateInputRef}
-                  type="date"
-                  value={entryDate}
-                  onChange={(e) => setEntryDate(e.target.value)}
-                  className="absolute w-0 h-0 opacity-0 -z-10"
-                />
-                <input 
-                  type="text" 
-                  readOnly
-                  value={formatDisplayDate(entryDate)}
-                  className="w-full h-[32px] border border-gray-300 border-r-0 rounded-l-[3px] px-2 text-[13px] outline-none text-gray-600"
-                />
-                <button 
-                  onClick={() => {
-                    try {
-                      dateInputRef.current?.showPicker();
-                    } catch (e) {
-                      dateInputRef.current?.focus();
-                    }
-                  }}
-                  className="h-[32px] border border-gray-300 border-l-0 px-2 flex items-center justify-center rounded-r-[3px] text-gray-500 bg-white hover:bg-gray-50 cursor-pointer"
-                >
-                  <Calendar className="w-4 h-4" />
-                </button>
-              </div>
+            <div className="grid grid-cols-[50px_110px_100px_1fr_100px_100px_110px_70px_100px_120px] bg-white border-b border-gray-200 no-print">
+              <div className="border-r border-gray-200 flex items-center justify-center p-1 bg-[#343a40]"><span className="text-white text-[12px] font-bold">#</span></div>
+              <div className="border-r border-gray-200 p-1 flex items-center"><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="w-full text-[13px] outline-none" /></div>
               <div className="border-r border-gray-200 p-1 flex items-center">
-                 <input type="text" value={paymentRemark} onChange={e => setPaymentRemark(e.target.value)} placeholder="Enter Other Information" className="w-full h-[32px] px-2 text-[13px] outline-none text-center placeholder-gray-400" />
+                 <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)} className="w-full h-[32px] px-1 text-[13px] outline-none border border-gray-300 rounded-[3px]">
+                   <option value="Cash">Cash</option>
+                   {banks.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                 </select>
               </div>
-              <div className="border-r border-gray-200 p-1 flex items-center">
-                <input type="text" className="w-full h-[32px] px-2 text-[13px] outline-none" readOnly />
-              </div>
-              <div className="border-r border-gray-200 p-1 flex items-center">
-                <input type="text" value="0" className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-center bg-gray-50" readOnly />
-              </div>
-              <div className="border-r border-gray-200 p-1 flex items-center">
-                <input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder="0" className="w-full h-[32px] border border-[#ffcccc] bg-[#fff0f0] rounded-[3px] px-2 text-[13px] outline-none text-center font-bold" />
-              </div>
-              <div className="border-r border-gray-200 p-1 flex items-center">
-                <input type="number" value={paymentDiscount} onChange={e => setPaymentDiscount(e.target.value)} placeholder="0" className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-center" />
-              </div>
-              <div className="border-r border-gray-200 p-1 flex items-center bg-[#e9ecef]">
-                <input type="text" value={selectedCompany ? Math.abs(selectedCompany.balance).toFixed(2) : "0"} className="w-full h-[32px] bg-transparent text-[13px] outline-none text-center" readOnly />
-              </div>
-              <div className="bg-[#343a40] flex items-center justify-center gap-1.5 p-1">
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                />
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-white p-1 rounded-sm shadow-sm hover:bg-gray-100"
-                >
-                  <Paperclip className="w-4 h-4 text-gray-600" strokeWidth={2.5} />
-                </button>
-                <button 
-                  onClick={handleAddEntry}
-                  className="text-[#28a745] hover:text-green-400"
-                >
-                  <PlusSquare className="w-6 h-6" strokeWidth={2.5} />
-                </button>
-              </div>
+              <div className="border-r border-gray-200 p-1 flex items-center"><input type="text" value={paymentRemark} onChange={e => setPaymentRemark(e.target.value)} placeholder="Remark" className="w-full h-[32px] px-2 text-[13px] outline-none" /></div>
+              <div className="border-r border-gray-200 p-1 flex items-center"><input type="text" className="w-full h-[32px] px-2 text-[13px] outline-none" readOnly /></div>
+              <div className="border-r border-gray-200 p-1 flex items-center"><input type="text" value="0" className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-center bg-gray-50" readOnly /></div>
+              <div className="border-r border-gray-200 p-1 flex items-center"><input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder="0" className="w-full h-[32px] border border-[#ffcccc] bg-[#fff0f0] rounded-[3px] px-2 text-[13px] outline-none text-center font-bold" /></div>
+              <div className="border-r border-gray-200 p-1 flex items-center"><input type="number" value={paymentDiscount} onChange={e => setPaymentDiscount(e.target.value)} placeholder="0" className="w-full h-[32px] border border-gray-300 rounded-[3px] px-2 text-[13px] outline-none text-center" /></div>
+              <div className="border-r border-gray-200 p-1 flex items-center bg-[#e9ecef]"><input type="text" value={selectedCompany ? Math.abs(selectedCompany.balance).toFixed(2) : "0"} className="w-full h-[32px] bg-transparent text-[13px] outline-none text-center" readOnly /></div>
+              <div className="bg-[#343a40] flex items-center justify-center p-1"><button onClick={handleAddEntry} className="text-[#28a745] hover:text-green-400"><PlusSquare className="w-6 h-6" /></button></div>
             </div>
 
             {/* Total Row */}
-            <div className="grid grid-cols-[50px_130px_1fr_100px_100px_130px_70px_100px_80px] bg-white border-b border-gray-200 mt-auto">
-              <div className="col-span-4 border-r border-gray-200 p-2 flex items-center justify-end">
+            <div className="grid grid-cols-[50px_110px_100px_1fr_100px_100px_110px_70px_100px_120px] bg-white border-b border-gray-200 mt-auto">
+              <div className="col-span-5 border-r border-gray-200 p-2 flex items-center justify-end">
                 <span className="font-bold text-[14px] text-gray-800">Total</span>
               </div>
               <div className="border-r border-gray-200 p-2 flex items-center justify-center">

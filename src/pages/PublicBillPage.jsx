@@ -183,26 +183,26 @@ export function PublicBillPage() {
 
   const parsedItems = items.map(i => ({
       name: i.product?.name || i.name || 'Unknown',
-      productCode: i.product?.sku || i.product?.barcode || '-',
-      batchNo: i.batchNo || '-',
+      productCode: i.productCode || i.product?.code || i.product?.sku || i.product?.barcode || '-',
+      batchNo: i.batchNo || i.product?.batchNo || '-',
       quantity: i.quantity || 1,
       freeQty: i.freeQty || 0,
       price: i.price || 0,
-      purchasePrice: i.product?.purchasePrice || i.purchasePrice || 0,
+      purchasePrice: i.purchasePrice || i.product?.purchasePrice || 0,
       mrp: i.mrp || i.product?.mrp || 0,
       pcs: i.quantity || 1,
-      secQty: i.secQty || 0,
-      priQty: i.priQty || i.quantity || 1,
-      unit: i.product?.baseUnit || i.unit || 'PCS',
-      size: i.product?.size || i.size || '-',
+      secQty: i.secOpeningQty || i.secQty || '-',
+      priQty: i.primaryOpeningQty || i.priQty || i.quantity || '-',
+      unit: i.unit || i.sUnit || i.pUnit || i.product?.baseUnit || '-',
+      size: i.size || i.product?.size || '-',
       pcsRate: i.price || 0,
-      discount: i.discount1 || 0,
-      discount2: i.discount2 || 0,
-      totalDiscount: (i.discountAmount || 0) + (i.discount2Amount || 0),
-      hsn: i.product?.hsnCode || i.hsnCode || '-',
+      discount: i.discount1 || i.disc1 || 0,
+      discount2: i.discount2 || i.disc2 || 0,
+      totalDiscount: (i.discount1 || i.disc1 || 0) + (i.discount2 || i.disc2 || 0),
+      hsn: i.hsnCode || i.product?.hsnCode || '-',
       taxableValue: i.amount || 0,
       total: i.total || i.amount || 0,
-      taxPercent: i.gstRate || 0
+      taxPercent: i.taxRate || i.gstRate || i.product?.tax || 0
   }));
 
   let totalQty = 0;

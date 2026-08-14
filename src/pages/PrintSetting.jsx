@@ -1396,11 +1396,25 @@ export function PrintSetting() {
                                         previewInvoice={previewInvoice}
                                         parsedItems={previewInvoice?.items?.map(i => ({
                                             name: i.product?.name || i.name || 'Unknown',
+                                            productCode: i.productCode || i.product?.code || '-',
+                                            batchNo: i.batchNo || i.product?.batchNo || '-',
+                                            hsn: i.hsnCode || i.product?.hsnCode || '-',
+                                            purchasePrice: i.purchasePrice || i.product?.purchasePrice || 0,
+                                            mrp: i.mrp || i.product?.mrp || 0,
+                                            pcs: i.quantity || 1,
+                                            secQty: i.secOpeningQty || '-',
+                                            priQty: i.primaryOpeningQty || i.quantity || '-',
+                                            unit: i.unit || i.sUnit || i.pUnit || i.product?.baseUnit || '-',
+                                            size: i.size || '-',
+                                            pcsRate: i.price || 0,
+                                            discount: i.discount1 || i.disc1 || 0,
+                                            discount2: i.discount2 || i.disc2 || 0,
+                                            totalDiscount: (i.discount1 || i.disc1 || 0) + (i.discount2 || i.disc2 || 0),
+                                            taxPercent: i.taxRate || i.gstRate || i.product?.tax || 0,
+                                            taxableValue: i.amount || 0,
                                             quantity: i.quantity || 1,
                                             freeQty: i.freeQty || 0,
                                             price: i.price || 0,
-                                            discount: i.discount1 || 0,
-                                            hsn: i.hsnCode || '-',
                                             total: i.amount || 0
                                         })) || []}
                                         totalQty={totalQty}
